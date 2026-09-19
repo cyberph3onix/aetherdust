@@ -1,0 +1,145 @@
+{
+  "findings": [
+    {
+      "id": "V5b-A-pending-coin-locked",
+      "ok": true,
+      "detail": "A after finalize (not submitted): available=4 pending=1 (before: 5/0)"
+    },
+    {
+      "id": "V5b-B-sees-coin-available-again",
+      "ok": true,
+      "detail": "B fresh sync: available=5 pending=0 — in-flight lock is process-local, not persisted"
+    },
+    {
+      "id": "V5b-B-resubmit-persisted-bytes",
+      "ok": true,
+      "detail": "submitted from B: id=00b5b01abe11937a1d5bf041af74b7e97e3b6fc2a036cfa18f0ea342573f21b107 fee=0.000001107083975 DUST"
+    },
+    {
+      "id": "V5b-B-immediate-resubmit",
+      "ok": true,
+      "detail": "same bytes re-submitted right after finality → accepted/deduped in 14ms, same id=true"
+    },
+    {
+      "id": "V5b-B-coin-set-changed-once",
+      "ok": true,
+      "detail": "B after sync: available=5 pending=0"
+    },
+    {
+      "id": "V5b-B-resubmit-after-sync-rejected",
+      "ok": true,
+      "detail": "rejected in 1050ms (replay protection, node code 193)"
+    }
+  ],
+  "before": {
+    "label": "sponsor-A",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [
+      "{\"initialValue\":\"249999999999997027172964\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999991631547000\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999987221456887\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999980792668514\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999985283718125\",\"owner\":\"11886380015789543296729785856017363359697744"
+    ],
+    "dustCoinValues": [
+      "0",
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "pendingTxs": 0
+  },
+  "duringA": {
+    "label": "sponsor-A",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1000000000000000000000000",
+    "dustCoins": 4,
+    "dustPendingCoins": 1,
+    "dustCoinIds": [
+      "{\"initialValue\":\"249999999999991631547000\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999987221456887\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999980792668514\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999985283718125\",\"owner\":\"11886380015789543296729785856017363359697744"
+    ],
+    "dustCoinValues": [
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "pendingTxs": 1
+  },
+  "bStart": {
+    "label": "sponsor-B",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [
+      "{\"initialValue\":\"249999999999997027172964\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999991631547000\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999987221456887\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999980792668514\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999985283718125\",\"owner\":\"11886380015789543296729785856017363359697744"
+    ],
+    "dustCoinValues": [
+      "0",
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "pendingTxs": 0
+  },
+  "bEnd": {
+    "label": "sponsor-B",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [
+      "{\"initialValue\":\"249999999999991631547000\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999998892916025\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999987221456887\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999980792668514\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999985283718125\",\"owner\":\"11886380015789543296729785856017363359697744"
+    ],
+    "dustCoinValues": [
+      "0",
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "pendingTxs": 0
+  },
+  "ids": [
+    "000348d0f520ab94031cb04e940c08e3c1e059310cb5e632f67853d70878974ee8",
+    "00b5b01abe11937a1d5bf041af74b7e97e3b6fc2a036cfa18f0ea342573f21b107"
+  ],
+  "txHash": "b93764b0ff0603b327fa096010c68a918fbb8e307783d6774fe49877118faffe"
+}

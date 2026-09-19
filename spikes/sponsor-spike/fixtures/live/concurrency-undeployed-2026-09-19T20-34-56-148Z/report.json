@@ -1,0 +1,167 @@
+{
+  "network": "undeployed",
+  "N": 14,
+  "contractAddress": "ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6",
+  "parallel": {
+    "mode": "parallel",
+    "n": 7,
+    "wallMs": 18941,
+    "submitted": 5,
+    "confirmed": 5,
+    "results": [
+      {
+        "ok": true,
+        "id": "00e528f5b4a13066b984125ab07dfe2542d4cd19543e3dc7f8fa8d999e6ab99e3c",
+        "txHash": "74208d3e3e0b8b93b26e033bdcd2721f26de35d82133d2a56c96b5ea4e0873dc",
+        "feeSpecks": "19207331486",
+        "balanceMs": 27,
+        "proveMergeMs": 826,
+        "submitMs": 18088
+      },
+      {
+        "ok": true,
+        "id": "0041e4ebbac45b5caec9413962c6aee5c6848c84268e52e877bf0eb86b91e2180b",
+        "txHash": "0385eb8b8be42f268a8802455a5b79d378c2f25ee70a89234d9f991fdf0f14d9",
+        "feeSpecks": "19207331486",
+        "balanceMs": 50,
+        "proveMergeMs": 840,
+        "submitMs": 18044
+      },
+      {
+        "ok": true,
+        "id": "00c7daa83cedbd2a9abae9c201b4a9c14e6d8c50f044a91eef41e096afc000d813",
+        "txHash": "35b6be746d4ca43ce86b372334078c25116e8ed4f7948cab5c975d863a18523a",
+        "feeSpecks": "19207331486",
+        "balanceMs": 71,
+        "proveMergeMs": 1579,
+        "submitMs": 17280
+      },
+      {
+        "ok": true,
+        "id": "003f5ce7dfb673033e95c2d5ec398f33be44c094324b4da49bd685a39c82dce050",
+        "txHash": "dc6558adf5fed3882a6f52bb91e36158561dbaf9178b6966ce936a15e24311a5",
+        "feeSpecks": "19207331486",
+        "balanceMs": 93,
+        "proveMergeMs": 1615,
+        "submitMs": 17230
+      },
+      {
+        "ok": true,
+        "id": "0066b203b2cb150d1040e668bbe001bc0d6b045cad1798d4ca4db9798af3d54655",
+        "txHash": "2ce128bbd5363cee81f4453af48348de91c2c607417b77dbb982d52cfefef946",
+        "feeSpecks": "19207331486",
+        "balanceMs": 122,
+        "proveMergeMs": 2042,
+        "submitMs": 16771
+      },
+      {
+        "ok": false,
+        "error": "Insufficient Funds: could not balance dust"
+      },
+      {
+        "ok": false,
+        "error": "Insufficient Funds: could not balance dust"
+      }
+    ]
+  },
+  "serial": {
+    "mode": "serial",
+    "n": 7,
+    "wallMs": 125742,
+    "submitted": 7,
+    "confirmed": 7,
+    "results": [
+      {
+        "ok": true,
+        "id": "00d58e8d836b2b4dce55340c00e0abc50e5c62ea999331de0a662477fca03bd69a",
+        "txHash": "5488efc37fd29ba627333d5e734707c2c1b76c4486a3b53ca3279932a4f643a9",
+        "feeSpecks": "16168022955",
+        "balanceMs": 17,
+        "proveMergeMs": 495,
+        "submitMs": 17113
+      },
+      {
+        "ok": true,
+        "id": "00798aa195404351553fab4e9a1e9d3bed79f97073062a34065991a8888595d2ef",
+        "txHash": "ba16a20b3e33b7701053cb9c747c501fe1fb6d9559fcd1141509078d91e474f0",
+        "feeSpecks": "14716281875",
+        "balanceMs": 15,
+        "proveMergeMs": 511,
+        "submitMs": 16827
+      },
+      {
+        "ok": true,
+        "id": "005b7bb47cf8994e56e670f5a683ae41006e1f5ea612898018a893ede9d168cc5c",
+        "txHash": "1a388a9203ce385531c1cfb6c1fa36085a43dfc681eed813b7c6b58c46a4c15a",
+        "feeSpecks": "12778543113",
+        "balanceMs": 15,
+        "proveMergeMs": 511,
+        "submitMs": 18158
+      },
+      {
+        "ok": true,
+        "id": "007bb0ddf03e58af8101fa2db365e1ff3d3c2bb78d1ef57a3d9ba4126b94bdfa1c",
+        "txHash": "17a3e75d2a880c4d645d114d6d80d7600e52d418f0a2a5ae48f52a88dd8a2f3e",
+        "feeSpecks": "11097410203",
+        "balanceMs": 15,
+        "proveMergeMs": 549,
+        "submitMs": 16790
+      },
+      {
+        "ok": true,
+        "id": "0081f2d656702a51e9be906eb012df524a011a3c26d25b10089c06fe833f08d645",
+        "txHash": "90189ceb41406a1b5c6922e9875bc50b1c6f6c65a2c9b155589bc6f6ebccd856",
+        "feeSpecks": "9636179567",
+        "balanceMs": 14,
+        "proveMergeMs": 524,
+        "submitMs": 18146
+      },
+      {
+        "ok": true,
+        "id": "007e4a433c1acbe93256cf3ae9b0bd4e4f5c136da263637dc569a1299abcdf2b24",
+        "txHash": "ed8a5a5252bf9b240bb2d4853bf29b0166d64f9587290aaf828e470abe9797aa",
+        "feeSpecks": "8368453000",
+        "balanceMs": 15,
+        "proveMergeMs": 538,
+        "submitMs": 16800
+      },
+      {
+        "ok": true,
+        "id": "00e0e0b9921eb0ba1bbfb5885ad6bc3d9236d33c817aaa4a68a49241792f120bcf",
+        "txHash": "a1b2668701f7b2e0f468101ca6a1c453d3f908e91c2e7f957f493737feabfc85",
+        "feeSpecks": "7267029986",
+        "balanceMs": 14,
+        "proveMergeMs": 531,
+        "submitMs": 18139
+      }
+    ]
+  },
+  "sponsorAfter": {
+    "label": "sponsor",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [
+      "{\"initialValue\":\"249999999999992732970014\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999991631547000\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999987221456887\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999980792668514\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999985283718125\",\"owner\":\"11886380015789543296729785856017363359697744"
+    ],
+    "dustCoinValues": [
+      "0",
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "pendingTxs": 0
+  },
+  "totalFeeDust": "0.000176068578129"
+}

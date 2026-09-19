@@ -1,0 +1,105 @@
+{
+  "network": "undeployed",
+  "N": 6,
+  "contractAddress": "ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6",
+  "parallel": {
+    "mode": "parallel",
+    "n": 3,
+    "wallMs": 17245,
+    "submitted": 3,
+    "confirmed": 3,
+    "results": [
+      {
+        "ok": true,
+        "id": "00a6ab5f2a44f33b887b2174adaa24d303370b9f2ebbf466ac47726021da16279a",
+        "txHash": "ad355ea7cddd1224c1dd48de1f264afe389c238f818685aaf4d4f8e76113f07e",
+        "feeSpecks": "48739992637",
+        "balanceMs": 29,
+        "proveMergeMs": 827,
+        "submitMs": 16387
+      },
+      {
+        "ok": true,
+        "id": "002515ff1e09d18fe9b53b7f906cc25b0328250dba6d2122fed6f24f2fd8706d69",
+        "txHash": "282e3cbebe4de8819bd0d64675287b52d9723f3b70a9ca1b4423514e487d1cc2",
+        "feeSpecks": "48739992637",
+        "balanceMs": 52,
+        "proveMergeMs": 840,
+        "submitMs": 16351
+      },
+      {
+        "ok": true,
+        "id": "0063f9369fb2fafaa44d8a7f971703fdfbbb513c17017d38418e03e83b238557bf",
+        "txHash": "de64ffcf0752aaff1ab98e5382bdeee3cdef9897221455f5b58f3874a293c27c",
+        "feeSpecks": "48739992637",
+        "balanceMs": 73,
+        "proveMergeMs": 1278,
+        "submitMs": 15889
+      }
+    ]
+  },
+  "serial": {
+    "mode": "serial",
+    "n": 3,
+    "wallMs": 52343,
+    "submitted": 3,
+    "confirmed": 3,
+    "results": [
+      {
+        "ok": true,
+        "id": "00747e404e4edfc46624a005c5637d6702afa0f4fd9c9c546dbf0cbf1baf51252c",
+        "txHash": "73b81961751a69d9909b4e5ddf8792b95fa427362547c5f0e4b6f82dcce58d5c",
+        "feeSpecks": "42733355576",
+        "balanceMs": 16,
+        "proveMergeMs": 497,
+        "submitMs": 15796
+      },
+      {
+        "ok": true,
+        "id": "00c81f8e9278ce9c621c3e08540f348e3779c3880f7f2a24ed1f370ed98479f10c",
+        "txHash": "b096cc015ec778c54120f2fdcad36e28974ae91cd0236d72baf00c4bb54805aa",
+        "feeSpecks": "38896289787",
+        "balanceMs": 17,
+        "proveMergeMs": 513,
+        "submitMs": 18154
+      },
+      {
+        "ok": true,
+        "id": "00dce7020867d8d9bc20cd83b3cbf480e1b2767ef1ca7575bf754cd003ddb40ad9",
+        "txHash": "60a65599e4d428d550bb499ef2254bbb6451369004a146c10671ba6a63fb1704",
+        "feeSpecks": "33776912439",
+        "balanceMs": 16,
+        "proveMergeMs": 521,
+        "submitMs": 16809
+      }
+    ]
+  },
+  "sponsorAfter": {
+    "label": "sponsor",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [
+      "{\"initialValue\":\"249999999999961103710213\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999966223087561\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"249999999999951260007363\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836",
+      "{\"initialValue\":\"249999999999951260007363\",\"owner\":\"11886380015789543296729785856017363359697744"
+    ],
+    "dustCoinValues": [
+      "0",
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "pendingTxs": 0
+  },
+  "totalFeeDust": "0.000261626535713"
+}

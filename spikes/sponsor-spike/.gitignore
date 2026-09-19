@@ -1,0 +1,6 @@
+node_modules/
+contract/src/managed/
+*.log
+logs/
+.private-state/
+midnight-level-db/

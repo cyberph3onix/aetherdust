@@ -1,0 +1,297 @@
+{
+  "network": "undeployed",
+  "startedAt": "2026-09-19T20:52:21.422Z",
+  "versions": {
+    "ledger": "8.1.0",
+    "facade": "4.1.0",
+    "midnightJs": "4.1.1",
+    "compactc": "0.31.1",
+    "compactRuntime": "0.16.0",
+    "node": "v24.21.0"
+  },
+  "contractAddress": "3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9",
+  "wellFormedProbe_user": {
+    "sig+limits": "PASS",
+    "sig+limits+native": "PASS",
+    "sig+limits+contract": "FAIL: call to non-existant contract ContractAddress(3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9",
+    "balancing-only": "FAIL: invalid balance -252340000000001 for token Dust in segment 0; balance must be positive"
+  },
+  "wellFormedProbe_merged": {
+    "sig+limits": "PASS",
+    "sig+limits+native": "PASS",
+    "sig+limits+contract": "FAIL: call to non-existant contract ContractAddress(3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9",
+    "balancing-only": "FAIL: invalid balance -536772540466765 for token Dust in segment 0; balance must be positive"
+  },
+  "v2_identifierProbes": {
+    "mergedTxHash": "NO (timeout mergedTxHash after 20000ms)",
+    "submitReturned(identifiers.at(-1))": "RESOLVED block=61 status=SucceedEntirely",
+    "userIdentifiers[0]": "RESOLVED block=61 status=SucceedEntirely",
+    "userTxHash(pre-merge)": "NO (timeout userTxHash(pre-merge) after 20000ms)"
+  },
+  "v6_ttlRemainingAtEndMs": 3537226,
+  "feeOverheadSpecks": "0",
+  "timings": {
+    "sponsor_sync_ms": 27102,
+    "user_sync_ms": 7,
+    "deploy_counter_ms": 19782,
+    "user_balance_no_dust_ms": 1,
+    "user_sign_path": "sdk",
+    "user_finalize_ms": 2,
+    "serialize_ms": 0,
+    "inspect_ms": 6,
+    "wellformed_probe_ms": 18,
+    "fee_calculate_ms": 4,
+    "fee_estimate_ms": 10,
+    "sponsor_balance_dust_ms": 15,
+    "sponsor_sign_ms": 2,
+    "sponsor_sign_path": "sdk",
+    "sponsor_prove_and_merge_ms": 495,
+    "submit_ms": 16345,
+    "e2e_increment_total_ms": 18223,
+    "e2e_wallclock_ms": 18223,
+    "sponsor_restart_sync_ms": 27851
+  },
+  "fees": {
+    "calculateTransactionFee": "4477300173370",
+    "estimateTransactionFee": "12547459533236",
+    "actualSponsorDustFee": "12547459533236"
+  },
+  "ids": {
+    "userIdentifiers": [
+      "00c726071eb0075bf4abb6bd93943bfd532ca9391389c37093f2bced59ee94d0de"
+    ],
+    "userTxHash": "c5fc53174969993bbed5c102b7994bc6a10ffd4eb3110208dc8511779aa5abd4",
+    "mergedIdentifiers": [
+      "0025b8fd692c45c091eb606322b69b2e695285295508d49f8ba4b395d389af4f45",
+      "00c726071eb0075bf4abb6bd93943bfd532ca9391389c37093f2bced59ee94d0de"
+    ],
+    "mergedTxHash": "7bdafa3c8410479e443c8829474ff34199f4ea39eb0c8cd4b9e3ba62f1c281e9",
+    "mergedSegments": [
+      1,
+      48946
+    ],
+    "submitReturned": "00c726071eb0075bf4abb6bd93943bfd532ca9391389c37093f2bced59ee94d0de"
+  },
+  "findings": [
+    {
+      "id": "AC2-precondition",
+      "ok": true,
+      "detail": "user holds 0 STAR and 0 SPECK (must be 0/0 for a meaningful test)"
+    },
+    {
+      "id": "sponsor-has-dust",
+      "ok": true,
+      "detail": "sponsor DUST = 1250000000 (5 coins)"
+    },
+    {
+      "id": "V11-inspect-calls",
+      "ok": true,
+      "detail": "derived calls=[{\"segment\":48946,\"address\":\"3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9\",\"entryPoint\":\"increment\"}]"
+    },
+    {
+      "id": "V10-user-tx-has-no-dust",
+      "ok": true,
+      "detail": "user tx dust spends=0"
+    },
+    {
+      "id": "V9-balancing-tx-is-dust-only",
+      "ok": true,
+      "detail": "balancing tx: dustSpends=1 calls=0 shieldedOffer=false"
+    },
+    {
+      "id": "V9-merged-has-no-residual-imbalance",
+      "ok": true,
+      "detail": "imbalances(seg0)={\"tag\":\"dust\"}:12547459533236"
+    },
+    {
+      "id": "V3-actual-fee-vs-estimate",
+      "ok": true,
+      "detail": "actual sponsor DustSpend vFee=0.012547459533236 DUST; estimate=0.012547459533236; calculate=0.00447730017337; ratio est/actual=1.000"
+    },
+    {
+      "id": "V1-sponsored-call-confirmed",
+      "ok": true,
+      "detail": "counter 0 → 1; block 61"
+    },
+    {
+      "id": "V2-confirmation-key",
+      "ok": true,
+      "detail": "{\n  \"mergedTxHash\": \"NO (timeout mergedTxHash after 20000ms)\",\n  \"submitReturned(identifiers.at(-1))\": \"RESOLVED block=61 status=SucceedEntirely\",\n  \"userIdentifiers[0]\": \"RESOLVED block=61 status=SucceedEntirely\",\n  \"userTxHash(pre-merge)\": \"NO (timeout userTxHash(pre-merge) after 20000ms)\"\n}"
+    },
+    {
+      "id": "AC2-user-paid-nothing",
+      "ok": true,
+      "detail": "user after: 0 STAR / 0 SPECK"
+    },
+    {
+      "id": "AC1-sponsor-paid",
+      "ok": true,
+      "detail": "sponsor DUST 1250000000 → 1250000000 (balance refills to cap: 250000000 NIGHT); dust coin set changed=true; coin values before=0,0,0,0,0 after=249999999987452540466764,0,249999999949556166329873,0,0"
+    },
+    {
+      "id": "N1-unpaid-tx-rejected-by-node",
+      "ok": true,
+      "detail": "FiberFailureImpl{\"message\":\"Transaction submission error\",\"name\":\"(FiberFailure) SubmissionError\"}"
+    },
+    {
+      "id": "N2-policy-rejects-entrypoint",
+      "ok": true,
+      "detail": "{\n  \"ok\": false,\n  \"code\": \"ENTRY_POINT_NOT_ALLOWED\",\n  \"detail\": \"3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9:increment\"\n}"
+    },
+    {
+      "id": "N2-policy-rejects-contract",
+      "ok": true,
+      "detail": "{\n  \"ok\": false,\n  \"code\": \"CONTRACT_NOT_ALLOWED\",\n  \"detail\": \"3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9\"\n}"
+    },
+    {
+      "id": "N3-replay-rejected",
+      "ok": true,
+      "detail": "FiberFailureImpl{\"message\":\"Transaction submission error\",\"name\":\"(FiberFailure) SubmissionError\"}"
+    },
+    {
+      "id": "N4-tampered-proof-offline-observation",
+      "ok": true,
+      "detail": "deserialized; wellFormed sig+limits=PASS → contract-proof corruption is NOT detectable offline on v8 (expected)"
+    },
+    {
+      "id": "N4b-tampered-tx-full-pipeline",
+      "ok": true,
+      "detail": "rejected: FiberFailureImpl{\"message\":\"Transaction submission error\",\"name\":\"(FiberFailure) SubmissionError\"} | sponsor cost: 1538ms wall (proving+submit), dust coins changed=false"
+    },
+    {
+      "id": "V5-restart-state-consistent",
+      "ok": true,
+      "detail": "restarted: dust=1250000000 coins=5 pending=0 vs live coins=5"
+    }
+  ],
+  "sponsorBefore": {
+    "label": "sponsor",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836",
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836",
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836",
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836",
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836"
+    ],
+    "dustCoinValues": [
+      "0",
+      "0",
+      "0",
+      "0",
+      "0"
+    ],
+    "pendingTxs": 0
+  },
+  "sponsorAfter": {
+    "label": "sponsor",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [
+      "{\"initialValue\":\"249999999987452540466764\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836",
+      "{\"initialValue\":\"249999999949556166329873\",\"owner\":\"11886380015789543296729785856017363359697744",
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836",
+      "{\"initialValue\":\"0\",\"owner\":\"1188638001578954329672978585601736335969774426538614901710102900836"
+    ],
+    "dustCoinValues": [
+      "249999999987452540466764",
+      "0",
+      "249999999949556166329873",
+      "0",
+      "0"
+    ],
+    "pendingTxs": 0
+  },
+  "userBefore": {
+    "label": "user",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1ukpqsyeyhxfualrj7aqh29tx09vuduqfsq4vhf0h4zxg3ax8q87q0rt49g",
+    "dustAddress": "mn_dust_undeployed1wwf9ncge5gkt40y5qgndlj5ayml0qarrsdhcmch6wewk5w8vwxxhxjq4ljv",
+    "nightStars": "0",
+    "nightUtxos": 0,
+    "nightUtxosRegisteredForDust": 0,
+    "dustSpecks": "0",
+    "dustCoins": 0,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [],
+    "dustCoinValues": [],
+    "pendingTxs": 0
+  },
+  "userAfter": {
+    "label": "user",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1ukpqsyeyhxfualrj7aqh29tx09vuduqfsq4vhf0h4zxg3ax8q87q0rt49g",
+    "dustAddress": "mn_dust_undeployed1wwf9ncge5gkt40y5qgndlj5ayml0qarrsdhcmch6wewk5w8vwxxhxjq4ljv",
+    "nightStars": "0",
+    "nightUtxos": 0,
+    "nightUtxosRegisteredForDust": 0,
+    "dustSpecks": "0",
+    "dustCoins": 0,
+    "dustPendingCoins": 0,
+    "dustCoinIds": [],
+    "dustCoinValues": [],
+    "pendingTxs": 0
+  },
+  "userSummary": {
+    "txHash": "c5fc53174969993bbed5c102b7994bc6a10ffd4eb3110208dc8511779aa5abd4",
+    "identifiers": [
+      "00c726071eb0075bf4abb6bd93943bfd532ca9391389c37093f2bced59ee94d0de"
+    ],
+    "byteLength": 3377,
+    "calls": [
+      {
+        "segment": 48946,
+        "address": "3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9",
+        "entryPoint": "increment"
+      }
+    ],
+    "deploys": 0,
+    "maintenanceUpdates": 0,
+    "hasDustActions": false,
+    "dustSpendCount": 0,
+    "dustFeeSpecks": "0",
+    "minIntentTtl": "2026-09-19T21:53:08.000Z",
+    "hasGuaranteedShieldedOffer": false,
+    "fallibleShieldedOfferSegments": 0
+  },
+  "mergedSummary": {
+    "txHash": "7bdafa3c8410479e443c8829474ff34199f4ea39eb0c8cd4b9e3ba62f1c281e9",
+    "identifiers": [
+      "0025b8fd692c45c091eb606322b69b2e695285295508d49f8ba4b395d389af4f45",
+      "00c726071eb0075bf4abb6bd93943bfd532ca9391389c37093f2bced59ee94d0de"
+    ],
+    "byteLength": 6563,
+    "calls": [
+      {
+        "segment": 48946,
+        "address": "3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9",
+        "entryPoint": "increment"
+      }
+    ],
+    "deploys": 0,
+    "maintenanceUpdates": 0,
+    "hasDustActions": true,
+    "dustSpendCount": 1,
+    "dustFeeSpecks": "12547459533236",
+    "minIntentTtl": "2026-09-19T21:23:09.000Z",
+    "hasGuaranteedShieldedOffer": false,
+    "fallibleShieldedOfferSegments": 0
+  },
+  "finishedAt": "2026-09-19T20:54:38.693Z"
+}

@@ -1,0 +1,102 @@
+[
+  {
+    "check": "build finalized deploy fixture",
+    "ok": true,
+    "detail": "349 bytes, hash 163306c5ad6df294…"
+  },
+  {
+    "check": "build unproven contract-call fixture",
+    "ok": true,
+    "detail": "calls=[{\"segment\":1,\"address\":\"aaa2afa4b576f9fe4751c699410ea8dccc74b287bdd274aea548e0a8bf92cacc\",\"entryPoint\":\"increment\"}] ttl=2026-09-19T21:16:34.000Z"
+  },
+  {
+    "check": "inspect: deploy detected, no calls, no dust",
+    "ok": true,
+    "detail": "{\"deploys\":1,\"ids\":1,\"ttl\":\"2026-09-19T21:16:34.000Z\"}"
+  },
+  {
+    "check": "policy: deploy rejected fail-closed",
+    "ok": true,
+    "detail": "{\"ok\":false,\"code\":\"CONTRACT_NOT_ALLOWED\",\"detail\":\"deploy/maintenance present\"}"
+  },
+  {
+    "check": "reject random bytes",
+    "ok": true,
+    "detail": "DESERIALIZE_FAILED: not a sealed ledger-v8 transaction: Unable to deserialize Transaction. Error: expected header tag 'midnight:transaction["
+  },
+  {
+    "check": "reject truncated finalized tx",
+    "ok": true,
+    "detail": "DESERIALIZE_FAILED: not a sealed ledger-v8 transaction: Unable to deserialize Transaction. Error: failed to fill whole buffer"
+  },
+  {
+    "check": "reject empty bytes",
+    "ok": true,
+    "detail": "DESERIALIZE_FAILED: not a sealed ledger-v8 transaction: Unable to deserialize Transaction. Error: expected header tag 'midnight:transaction["
+  },
+  {
+    "check": "reject oversize (limit 100B)",
+    "ok": true,
+    "detail": "TOO_LARGE: 349 bytes > 100"
+  },
+  {
+    "check": "reject unproven tx presented as finalized (wrong variant)",
+    "ok": true,
+    "detail": "DESERIALIZE_FAILED: not a sealed ledger-v8 transaction: Unable to deserialize Transaction. Error: expected header tag 'midnight:transaction["
+  },
+  {
+    "check": "bit-flip fuzz (64): corruptions rejected or hash-changed",
+    "ok": true,
+    "detail": "throws=40 diffHash=24 sameHash=0"
+  },
+  {
+    "check": "network id is NOT recoverable from summary alone (must use validateTransaction / wellFormed)",
+    "ok": true,
+    "detail": "preview fixture deserializes fine; hash ae7e4a62d1cc… ≠ undeployed 163306c5ad6d…"
+  },
+  {
+    "check": "wellFormed rejects wrong network id before anything else",
+    "ok": true,
+    "detail": "invalid network ID - expect 'undeployed' found 'preview'"
+  },
+  {
+    "check": "wellFormed cannot validate mock-proven tx offline (binding) — live validateTransaction needed",
+    "ok": true,
+    "detail": "binding commitment calculation mismatch: expected JubjubSubg"
+  },
+  {
+    "check": "serialize→deserialize→serialize is byte-stable",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "check": "fees(params) computable offline",
+    "ok": true,
+    "detail": "fee=154598174710001 specks (0.154598174710001 DUST); withMargin(1.5)=161702146124045 (0.161702146124045 DUST)"
+  },
+  {
+    "check": "imbalances(segment 0, fee) reports unpaid DUST fee",
+    "ok": true,
+    "detail": "{\"tag\":\"dust\"}=-154598174710001"
+  },
+  {
+    "check": "merge of two txs with the same intent segment id throws (why the wallet randomizes segments)",
+    "ok": true,
+    "detail": "key (segment_id) collision during intents merge: 1"
+  },
+  {
+    "check": "merge with randomized segment succeeds; identifiers = union",
+    "ok": true,
+    "detail": "A=1 C=1 merged=2; segments=1,34803"
+  },
+  {
+    "check": "merged transactionHash differs from both inputs",
+    "ok": true,
+    "detail": "A bc07f85728ee… C fdf20eaec1d0… M 5002daeaf2f8…"
+  },
+  {
+    "check": "user tx identifiers survive merge (candidate confirmation key, V2)",
+    "ok": true,
+    "detail": ""
+  }
+]

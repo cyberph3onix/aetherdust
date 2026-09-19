@@ -1,0 +1,258 @@
+{
+  "network": "undeployed",
+  "startedAt": "2026-09-19T20:18:54.530Z",
+  "versions": {
+    "ledger": "8.1.0",
+    "facade": "4.1.0",
+    "midnightJs": "4.1.1",
+    "compactc": "0.31.1",
+    "compactRuntime": "0.16.0",
+    "node": "v24.21.0"
+  },
+  "contractAddress": "ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6",
+  "wellFormedProbe_user": {
+    "sig+limits": "PASS",
+    "sig+limits+native": "PASS",
+    "sig+limits+contract": "FAIL: call to non-existant contract ContractAddress(ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6",
+    "balancing-only": "FAIL: invalid balance -252340000000001 for token Dust in segment 0; balance must be positive"
+  },
+  "wellFormedProbe_merged": {
+    "sig+limits": "PASS",
+    "sig+limits+native": "PASS",
+    "sig+limits+contract": "FAIL: call to non-existant contract ContractAddress(ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6",
+    "balancing-only": "FAIL: invalid balance -215674383446002 for token Dust in segment 0; balance must be positive"
+  },
+  "v2_identifierProbes": {
+    "mergedTxHash": "NO (timeout mergedTxHash after 20000ms)",
+    "submitReturned(identifiers.at(-1))": "RESOLVED block=41 status=SucceedEntirely",
+    "userIdentifiers[0]": "RESOLVED block=41 status=SucceedEntirely",
+    "userTxHash(pre-merge)": "NO (timeout userTxHash(pre-merge) after 20000ms)"
+  },
+  "v6_ttlRemainingAtEndMs": 3535785,
+  "timings": {
+    "sponsor_sync_ms": 34029,
+    "user_sync_ms": 8,
+    "user_balance_no_dust_ms": 3,
+    "user_sign_path": "sdk",
+    "user_finalize_ms": 3,
+    "serialize_ms": 0,
+    "inspect_ms": 7,
+    "wellformed_probe_ms": 20,
+    "fee_calculate_ms": 6,
+    "fee_estimate_ms": 19,
+    "sponsor_balance_dust_ms": 17,
+    "sponsor_sign_ms": 3,
+    "sponsor_sign_path": "sdk",
+    "sponsor_prove_and_merge_ms": 532,
+    "submit_ms": 20036,
+    "e2e_increment_total_ms": 21998,
+    "e2e_wallclock_ms": 21998,
+    "sponsor_restart_sync_ms": 34546
+  },
+  "fees": {
+    "calculateTransactionFee": "312023580505633",
+    "estimateTransactionFee": "333695616553999",
+    "actualSponsorDustFee": "333695616553999"
+  },
+  "ids": {
+    "userIdentifiers": [
+      "00c87674e9b8c1cded8759bd62d4f6f68466ffc73f65d9d1c49c46e4d3088b733e"
+    ],
+    "userTxHash": "26e8f5c97a290d8f1d33c21af0e0c84471df43eae33ac70c4c95a429c94c361c",
+    "mergedIdentifiers": [
+      "003363d9be2d9b953cb71f238b4881ec43f80482abb0a7875c1a480ac14c2c0055",
+      "00c87674e9b8c1cded8759bd62d4f6f68466ffc73f65d9d1c49c46e4d3088b733e"
+    ],
+    "mergedTxHash": "bd1dda25e434de8add3de1a9201b7b33d4701e37c25cc999c5d51dd821990bfd",
+    "mergedSegments": [
+      1,
+      19756
+    ],
+    "submitReturned": "00c87674e9b8c1cded8759bd62d4f6f68466ffc73f65d9d1c49c46e4d3088b733e"
+  },
+  "findings": [
+    {
+      "id": "AC2-precondition",
+      "ok": true,
+      "detail": "user holds 0 STAR and 0 SPECK (must be 0/0 for a meaningful test)"
+    },
+    {
+      "id": "sponsor-has-dust",
+      "ok": true,
+      "detail": "sponsor DUST = 1250000000 (5 coins)"
+    },
+    {
+      "id": "V11-inspect-calls",
+      "ok": true,
+      "detail": "derived calls=[{\"segment\":19756,\"address\":\"ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6\",\"entryPoint\":\"increment\"}]"
+    },
+    {
+      "id": "V10-user-tx-has-no-dust",
+      "ok": true,
+      "detail": "user tx dust spends=0"
+    },
+    {
+      "id": "V9-balancing-tx-is-dust-only",
+      "ok": true,
+      "detail": "balancing tx: dustSpends=1 calls=0 shieldedOffer=false"
+    },
+    {
+      "id": "V9-merged-has-no-residual-imbalance",
+      "ok": true,
+      "detail": "imbalances(seg0)={\"tag\":\"dust\"}:333695616553999"
+    },
+    {
+      "id": "V3-actual-fee-vs-estimate",
+      "ok": true,
+      "detail": "actual sponsor DustSpend vFee=0.333695616553999 DUST; estimate=0.333695616553999; calculate=0.312023580505633; ratio est/actual=1.000"
+    },
+    {
+      "id": "V1-sponsored-call-confirmed",
+      "ok": true,
+      "detail": "counter 0 → 1; block 41"
+    },
+    {
+      "id": "V2-confirmation-key",
+      "ok": true,
+      "detail": "{\n  \"mergedTxHash\": \"NO (timeout mergedTxHash after 20000ms)\",\n  \"submitReturned(identifiers.at(-1))\": \"RESOLVED block=41 status=SucceedEntirely\",\n  \"userIdentifiers[0]\": \"RESOLVED block=41 status=SucceedEntirely\",\n  \"userTxHash(pre-merge)\": \"NO (timeout userTxHash(pre-merge) after 20000ms)\"\n}"
+    },
+    {
+      "id": "AC2-user-paid-nothing",
+      "ok": true,
+      "detail": "user after: 0 STAR / 0 SPECK"
+    },
+    {
+      "id": "AC1-sponsor-paid",
+      "ok": false,
+      "detail": "sponsor DUST 1250000000 → 1250000000 (Δ includes generation since snapshot); coins 5→5"
+    },
+    {
+      "id": "N1-unpaid-tx-rejected-by-node",
+      "ok": true,
+      "detail": "Transaction submission error"
+    },
+    {
+      "id": "N2-policy-rejects-entrypoint",
+      "ok": true,
+      "detail": "{\n  \"ok\": false,\n  \"code\": \"ENTRY_POINT_NOT_ALLOWED\",\n  \"detail\": \"ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6:increment\"\n}"
+    },
+    {
+      "id": "N2-policy-rejects-contract",
+      "ok": true,
+      "detail": "{\n  \"ok\": false,\n  \"code\": \"CONTRACT_NOT_ALLOWED\",\n  \"detail\": \"ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6\"\n}"
+    },
+    {
+      "id": "N3-replay-rejected",
+      "ok": true,
+      "detail": "Transaction submission error"
+    },
+    {
+      "id": "N4-tampered-bytes-rejected",
+      "ok": false,
+      "detail": "deserialized; wellFormed sig+limits=PASS"
+    },
+    {
+      "id": "V5-restart-state-consistent",
+      "ok": true,
+      "detail": "restarted: dust=1250000000 coins=5 pending=0 vs live coins=5"
+    }
+  ],
+  "sponsorBefore": {
+    "label": "sponsor",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "pendingTxs": 0
+  },
+  "sponsorAfter": {
+    "label": "sponsor",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s",
+    "dustAddress": "mn_dust_undeployed1w0l54txthpu8q05j9j9ttk3j5dyu5766dc9zkz2s435vdglzwdr35dw790y",
+    "nightStars": "250000000000000",
+    "nightUtxos": 5,
+    "nightUtxosRegisteredForDust": 5,
+    "dustSpecks": "1250000000000000000000000",
+    "dustCoins": 5,
+    "dustPendingCoins": 0,
+    "pendingTxs": 0
+  },
+  "userBefore": {
+    "label": "user",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1ukpqsyeyhxfualrj7aqh29tx09vuduqfsq4vhf0h4zxg3ax8q87q0rt49g",
+    "dustAddress": "mn_dust_undeployed1wwf9ncge5gkt40y5qgndlj5ayml0qarrsdhcmch6wewk5w8vwxxhxjq4ljv",
+    "nightStars": "0",
+    "nightUtxos": 0,
+    "nightUtxosRegisteredForDust": 0,
+    "dustSpecks": "0",
+    "dustCoins": 0,
+    "dustPendingCoins": 0,
+    "pendingTxs": 0
+  },
+  "userAfter": {
+    "label": "user",
+    "synced": true,
+    "unshieldedAddress": "mn_addr_undeployed1ukpqsyeyhxfualrj7aqh29tx09vuduqfsq4vhf0h4zxg3ax8q87q0rt49g",
+    "dustAddress": "mn_dust_undeployed1wwf9ncge5gkt40y5qgndlj5ayml0qarrsdhcmch6wewk5w8vwxxhxjq4ljv",
+    "nightStars": "0",
+    "nightUtxos": 0,
+    "nightUtxosRegisteredForDust": 0,
+    "dustSpecks": "0",
+    "dustCoins": 0,
+    "dustPendingCoins": 0,
+    "pendingTxs": 0
+  },
+  "userSummary": {
+    "txHash": "26e8f5c97a290d8f1d33c21af0e0c84471df43eae33ac70c4c95a429c94c361c",
+    "identifiers": [
+      "00c87674e9b8c1cded8759bd62d4f6f68466ffc73f65d9d1c49c46e4d3088b733e"
+    ],
+    "byteLength": 3377,
+    "calls": [
+      {
+        "segment": 19756,
+        "address": "ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6",
+        "entryPoint": "increment"
+      }
+    ],
+    "deploys": 0,
+    "maintenanceUpdates": 0,
+    "hasDustActions": false,
+    "dustSpendCount": 0,
+    "dustFeeSpecks": "0",
+    "minIntentTtl": "2026-09-19T21:19:29.000Z",
+    "hasGuaranteedShieldedOffer": false,
+    "fallibleShieldedOfferSegments": 0
+  },
+  "mergedSummary": {
+    "txHash": "bd1dda25e434de8add3de1a9201b7b33d4701e37c25cc999c5d51dd821990bfd",
+    "identifiers": [
+      "003363d9be2d9b953cb71f238b4881ec43f80482abb0a7875c1a480ac14c2c0055",
+      "00c87674e9b8c1cded8759bd62d4f6f68466ffc73f65d9d1c49c46e4d3088b733e"
+    ],
+    "byteLength": 6564,
+    "calls": [
+      {
+        "segment": 19756,
+        "address": "ae439fd430094aa22e33e7a02e702d1ed98f79fe2268b64fa37b68f6f71ccba6",
+        "entryPoint": "increment"
+      }
+    ],
+    "deploys": 0,
+    "maintenanceUpdates": 0,
+    "hasDustActions": true,
+    "dustSpendCount": 1,
+    "dustFeeSpecks": "333695616553999",
+    "minIntentTtl": "2026-09-19T20:49:29.000Z",
+    "hasGuaranteedShieldedOffer": false,
+    "fallibleShieldedOfferSegments": 0
+  },
+  "finishedAt": "2026-09-19T20:21:07.826Z"
+}
