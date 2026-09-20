@@ -86,8 +86,10 @@ services:
       APP__INFRA__LEDGER_STATE_STORAGE__PASSWORD: indexer
       APP__INFRA__SECRET: '303132333435363738393031323334353637383930313233343536373839303132'
     ports: ['${MIDNIGHT_INDEXER_PORT:-8088}:8088']
-    healthcheck: { test: ['CMD-SHELL', 'cat /var/run/indexer-standalone/running'], interval: 5s, timeout: 5s, retries: 30, start_period: 10s }
+    healthcheck: { test: ['CMD-SHELL', 'cat /var/run/indexer-standalone/running'], interval: 5s, timeout: 5s, retries: 60, start_period: 10s }
     depends_on: { midnight-node: { condition: service_healthy } }
+    # on a fresh chain the indexer exits with "block number 1 not found" if it starts before the first block: let it retry
+    restart: on-failure
 
 volumes:
   pgdata: {}

@@ -69,7 +69,7 @@ describe('budget reservations', () => {
 describe('requests', () => {
   it('enforces request_id and tx_hash uniqueness, optimistic transitions, audit trail, SKIP LOCKED claims', async () => {
     const app = await createApplication(pool, 'a');
-    const base = { applicationId: app.id, userId: 'u', txFormat: 'mock', txBytes: Buffer.from('x'), policyVersion: 1, ttlAt: null };
+    const base = { applicationId: app.id, userId: 'u', txFormat: 'mock', txBytes: Buffer.from('x'), policyVersion: 1, ttlAt: null, at: new Date() };
     const r1 = await withTx(pool, (tx) => insertReceived(tx, { ...base, requestId: 'req-1', txHash: 'h1', txSummary: summary('h1') }));
     await expect(withTx(pool, (tx) => insertReceived(tx, { ...base, requestId: 'req-1', txHash: 'h2', txSummary: summary('h2') }))).rejects.toSatisfy((e) => isUniqueViolation(e, 'sponsorship_requests_application_id_request_id_key'));
     await expect(withTx(pool, (tx) => insertReceived(tx, { ...base, requestId: 'req-2', txHash: 'h1', txSummary: summary('h1') }))).rejects.toSatisfy((e) => isUniqueViolation(e, 'sponsorship_requests_tx_hash_uidx'));

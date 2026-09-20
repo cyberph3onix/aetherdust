@@ -1,10 +1,11 @@
 import { big, type Db } from './client.js';
 
-export const insertUsage = async (tx: Db, a: { requestId: string; applicationId: string; userId: string; contract: string; entryPoint: string; specks: bigint; periodStart: Date }) => {
+/** `at` is the application clock (the same one budgets/periods use), not the database's — one time source. */
+export const insertUsage = async (tx: Db, a: { requestId: string; applicationId: string; userId: string; contract: string; entryPoint: string; specks: bigint; periodStart: Date; at: Date }) => {
   await tx.query(
-    `INSERT INTO usage_records (request_id, application_id, user_id, contract, entry_point, specks, period_start) VALUES ($1,$2,$3,$4,$5,$6,$7)
+    `INSERT INTO usage_records (request_id, application_id, user_id, contract, entry_point, specks, period_start, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
      ON CONFLICT (request_id) DO NOTHING`,
-    [a.requestId, a.applicationId, a.userId, a.contract, a.entryPoint, a.specks.toString(), a.periodStart]);
+    [a.requestId, a.applicationId, a.userId, a.contract, a.entryPoint, a.specks.toString(), a.periodStart, a.at]);
 };
 
 export interface UsageBreakdown { key: string; specks: bigint; count: number }
@@ -18,14 +19,14 @@ const bd = (rows: any[]): UsageBreakdown[] => rows.map((r) => ({ key: r.key, spe
 
 export const usageSummary = async (db: Db, applicationId: string, from: Date, to: Date, bucket: 'hour' | 'day' = 'hour', topN = 20): Promise<UsageSummary> => {
   const p = [applicationId, from, to];
-  const tot = await db.query('SELECT COALESCE(SUM(specks),0)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at < $3', p);
-  const st = await db.query(`SELECT status, COUNT(*)::int AS n FROM sponsorship_requests WHERE application_id = $1 AND created_at >= $2 AND created_at < $3 GROUP BY status`, p);
+  const tot = await db.query('SELECT COALESCE(SUM(specks),0)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at <= $3', p);
+  const st = await db.query(`SELECT status, COUNT(*)::int AS n FROM sponsorship_requests WHERE application_id = $1 AND created_at >= $2 AND created_at <= $3 GROUP BY status`, p);
   const counts = Object.fromEntries(st.rows.map((r: any) => [r.status, r.n as number]));
-  const byContract = await db.query(`SELECT contract AS key, SUM(specks)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at < $3 GROUP BY contract ORDER BY 2 DESC LIMIT $4`, [...p, topN]);
-  const byEp = await db.query(`SELECT contract || ':' || entry_point AS key, SUM(specks)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at < $3 GROUP BY 1 ORDER BY 2 DESC LIMIT $4`, [...p, topN]);
-  const byUser = await db.query(`SELECT user_id AS key, SUM(specks)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at < $3 GROUP BY user_id ORDER BY 2 DESC LIMIT $4`, [...p, topN]);
-  const byReason = await db.query(`SELECT COALESCE(reason_code,'?') AS key, COUNT(*)::int AS n FROM sponsorship_requests WHERE application_id = $1 AND created_at >= $2 AND created_at < $3 AND status IN ('REJECTED','SPONSORING_FAILED','SUBMISSION_FAILED','EXPIRED') GROUP BY 1 ORDER BY 2 DESC`, p);
-  const series = await db.query(`SELECT date_trunc($4, created_at) AS bucket, SUM(specks)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at < $3 GROUP BY 1 ORDER BY 1`, [...p, bucket]);
+  const byContract = await db.query(`SELECT contract AS key, SUM(specks)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at <= $3 GROUP BY contract ORDER BY 2 DESC LIMIT $4`, [...p, topN]);
+  const byEp = await db.query(`SELECT contract || ':' || entry_point AS key, SUM(specks)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at <= $3 GROUP BY 1 ORDER BY 2 DESC LIMIT $4`, [...p, topN]);
+  const byUser = await db.query(`SELECT user_id AS key, SUM(specks)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at <= $3 GROUP BY user_id ORDER BY 2 DESC LIMIT $4`, [...p, topN]);
+  const byReason = await db.query(`SELECT COALESCE(reason_code,'?') AS key, COUNT(*)::int AS n FROM sponsorship_requests WHERE application_id = $1 AND created_at >= $2 AND created_at <= $3 AND status IN ('REJECTED','SPONSORING_FAILED','SUBMISSION_FAILED','EXPIRED') GROUP BY 1 ORDER BY 2 DESC`, p);
+  const series = await db.query(`SELECT date_trunc($4, created_at) AS bucket, SUM(specks)::text AS specks, COUNT(*)::int AS n FROM usage_records WHERE application_id = $1 AND created_at >= $2 AND created_at <= $3 GROUP BY 1 ORDER BY 1`, [...p, bucket]);
   const sum = (...s: string[]) => s.reduce((a, k) => a + (counts[k] ?? 0), 0);
   return {
     from, to, totalSpecks: big(tot.rows[0].specks), confirmed: counts.CONFIRMED ?? 0,

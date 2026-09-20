@@ -122,7 +122,11 @@ export const registerForDust = async (w: SponsorWallet, waitMs: number, log: (m:
   const utxos = s.unshielded.availableCoins.filter((c: any) => c.meta?.registeredForDustGeneration !== true);
   if (utxos.length === 0 && s.dust.availableCoins.length === 0) throw new Error('no NIGHT UTXOs to register — fund the sponsor’s unshielded address first');
   if (utxos.length > 0) {
-    log(`registering ${utxos.length} NIGHT UTXO(s) for DUST generation`);
+    // the registration pays its own fee from the DUST the UTXOs have *projected* to generate; fees are dynamic
+    // (block fullness), so on a busy/fresh chain the wallet may need to wait a while before it can afford it
+    const { fee } = await w.facade.estimateRegistration(utxos);
+    log(`registering ${utxos.length} NIGHT UTXO(s) for DUST generation (fee ≈ ${fee} SPECK; waiting until the UTXOs have accrued that much)`);
+    await w.facade.waitForGeneratedDust(utxos, fee * 12n / 10n, { timeoutMs: waitMs }); // +20 %: the fee may move while we wait
     const recipe = await w.facade.registerNightUtxosForDustGeneration(utxos, w.unshieldedKeystore.getPublicKey(), signAll(w));
     const finalized = await w.facade.finalizeRecipe(recipe);
     await w.facade.submitTransaction(finalized);

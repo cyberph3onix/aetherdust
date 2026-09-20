@@ -47,7 +47,7 @@ const reserved = async (requestId: string, extra: Record<string, unknown> = {}) 
   const { start, end } = periodBounds('daily', now);
   const amount = dustToSpecks('0.0044');
   return withTx(pool, async (tx) => {
-    const r = await insertReceived(tx, { applicationId: appId, requestId, userId: 'u', txFormat: 'mock', txHash: summary.txHash, txBytes: Buffer.from(bytes), txSummary: summary, policyVersion: 1, ttlAt: summary.minIntentTtl });
+    const r = await insertReceived(tx, { applicationId: appId, requestId, userId: 'u', txFormat: 'mock', txHash: summary.txHash, txBytes: Buffer.from(bytes), txSummary: summary, policyVersion: 1, ttlAt: summary.minIntentTtl, at: now });
     const ok = await reserve(tx, { applicationId: appId, userId: 'u', periodStart: start, periodEnd: end, globalLimit: dustToSpecks('10'), userLimit: dustToSpecks('1'), amount });
     expect(ok.ok).toBe(true);
     return transition(tx, r.id, 'RECEIVED', 'RESERVED', { patch: { estimatedFeeSpecks: dustToSpecks('0.004'), reservedSpecks: amount, periodStart: start } });

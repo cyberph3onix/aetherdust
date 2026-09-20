@@ -29,14 +29,16 @@ const event = (r: any): RequestEvent => ({ id: Number(r.id), requestId: r.reques
 export interface InsertReceived {
   applicationId: string; requestId: string; userId: string; claimedContract?: string; claimedEntryPoint?: string;
   txFormat: string; txHash: string; txBytes: Buffer; txSummary: TxSummary; policyVersion: number | null; ttlAt: Date | null;
+  /** application clock — `created_at` must agree with the budget period and usage windows computed from the same clock */
+  at: Date;
 }
 /** Inserts a RECEIVED request + its first event. Unique violations propagate (caller maps them to idempotency semantics). */
 export const insertReceived = async (tx: Db, a: InsertReceived): Promise<SponsorshipRequest> => {
   const r = await tx.query(
-    `INSERT INTO sponsorship_requests (application_id, request_id, user_id, claimed_contract, claimed_entry_point, tx_format, tx_hash, tx_bytes, tx_summary, policy_version, ttl_at, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,'RECEIVED') RETURNING *`,
-    [a.applicationId, a.requestId, a.userId, a.claimedContract ?? null, a.claimedEntryPoint ?? null, a.txFormat, a.txHash, a.txBytes, jsonb(a.txSummary), a.policyVersion, a.ttlAt]);
-  await tx.query('INSERT INTO request_events (request_id, from_status, to_status) VALUES ($1, NULL, $2)', [r.rows[0].id, 'RECEIVED']);
+    `INSERT INTO sponsorship_requests (application_id, request_id, user_id, claimed_contract, claimed_entry_point, tx_format, tx_hash, tx_bytes, tx_summary, policy_version, ttl_at, status, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,'RECEIVED',$12,$12) RETURNING *`,
+    [a.applicationId, a.requestId, a.userId, a.claimedContract ?? null, a.claimedEntryPoint ?? null, a.txFormat, a.txHash, a.txBytes, jsonb(a.txSummary), a.policyVersion, a.ttlAt, a.at]);
+  await tx.query('INSERT INTO request_events (request_id, from_status, to_status, created_at) VALUES ($1, NULL, $2, $3)', [r.rows[0].id, 'RECEIVED', a.at]);
   return row(r.rows[0]);
 };
 

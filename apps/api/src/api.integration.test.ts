@@ -261,7 +261,8 @@ describe('idempotency (AC9)', () => {
     expect(replay.json().id).toBe(first.json().id);
     expect((await sponsor('idem', 'user-1', mockTx('other'))).json().error.code).toBe('DUPLICATE_REQUEST');
     expect((await sponsor('idem-2', 'user-1', mockTx('idem'))).json().error.code).toBe('DUPLICATE_REQUEST');
-    const burst = await Promise.all(Array.from({ length: 10 }, () => sponsor('burst')));
+    const burst = await Promise.all(Array.from({ length: 25 }, () => sponsor('burst')));
+    expect(burst.every((r) => r.statusCode === 202 || r.statusCode === 200)).toBe(true); // never 409/5xx for a same-request_id retry
     expect(new Set(burst.map((r) => r.json().id)).size).toBe(1);
     expect(burst.filter((r) => r.statusCode === 202)).toHaveLength(1);
     await worker.drain();

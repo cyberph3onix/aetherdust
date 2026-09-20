@@ -29,7 +29,7 @@ export const confirmRequest = (deps: WorkerDeps, r: SponsorshipRequest, from: Re
       await insertEvent(tx, r.id, { status: 'CONFIRMED', reasonCode: 'OVERSPEND', details: { reservedSpecks: r.reservedSpecks.toString(), estimatedFeeSpecks: r.estimatedFeeSpecks?.toString() ?? null, actualFeeSpecks: actualFee.toString(), overspendSpecks: (actualFee - r.reservedSpecks).toString() } });
     }
     const c = r.txSummary.calls[0];
-    await insertUsage(tx, { requestId: r.id, applicationId: r.applicationId, userId: r.userId, contract: c?.address ?? '', entryPoint: c?.entryPoint ?? '', specks: actualFee, periodStart: r.periodStart! });
+    await insertUsage(tx, { requestId: r.id, applicationId: r.applicationId, userId: r.userId, contract: c?.address ?? '', entryPoint: c?.entryPoint ?? '', specks: actualFee, periodStart: r.periodStart!, at: deps.now() });
     return out;
   });
 

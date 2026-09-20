@@ -15,11 +15,18 @@ export default async function setup(project: TestProject) {
     await pg.start();
     await pg.createDatabase('aetherdust_test');
     url = `postgres://aetherdust:aetherdust@127.0.0.1:${port}/aetherdust_test`;
-    stop = () => pg.stop();
+    stop = () => pg.stop().catch(() => {});
   }
   process.env.AETHERDUST_TEST_DATABASE_URL = url;
   project.provide('databaseUrl', url);
-  return stop;
+  return async () => {
+    // With the embedded Postgres, stopping its child process ends up resetting the exit code to 0 (rolldown's vendored
+    // signal-exit hooks process.emit/reallyExit), which would turn a failed run green. Pin the outcome ourselves.
+    const failed = project.vitest.state.getFiles().some((f) => f.result?.state === 'fail');
+    await stop();
+    process.on('exit', () => { if (failed) process.exitCode = 1; });
+    if (failed) process.exitCode = 1;
+  };
 }
 
 declare module 'vitest' {

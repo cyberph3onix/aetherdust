@@ -83,7 +83,15 @@ rejection consumes nothing and the DApp's already-signed tx must be sponsorable 
 e2e user provider now varies the TTL; (c) the node answers `1013 Transaction Already Imported` (not a silent dedupe) when the
 facade resubmits right after inclusion; (d) compose infra: the standalone indexer requires `APP__INFRA__SPO_NODE__*` even on
 `undeployed`, and the proof-server image has no shell (no exec health check possible — the worker retries instead); (e) the
-Dockerfile had never copied `deploy/entrypoint.sh`/`scripts/`. Deferred to Phase 3/5: dashboard wallet page, `preprod` recorded run.
+Dockerfile had never copied `deploy/entrypoint.sh`/`scripts/`. First CI run (2026-09-20 evening) surfaced four more, all fixed:
+(f) rows were stamped with the database clock while budgets/usage used the app clock — requests and usage records now carry
+the application clock and the usage window is inclusive; (g) a same-`request_id` retry racing the first attempt could be
+answered `409` via the tx-hash lookup instead of a replay (now a 25-way burst test); (h) on a fresh chain the indexer exits
+with "block number 1 not found" (`restart: on-failure`), and `compose --wait` refuses the shell-less proof server (started
+apart); (i) the registration fee is paid from the UTXO's *projected* DUST and is dynamic — `register-dust` now
+`estimateRegistration` + `waitForGeneratedDust` before registering; (j) with the embedded test Postgres a failed run exited 0
+(rolldown's signal-exit hook) — the global teardown now pins the exit code. Deferred to Phase 3/5: dashboard wallet page,
+`preprod` recorded run.
 
 ## 1. Midnight research findings
 

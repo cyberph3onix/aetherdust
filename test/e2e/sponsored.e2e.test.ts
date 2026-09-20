@@ -125,6 +125,14 @@ describe.skipIf(!E2E)(`e2e: sponsored contract calls on undeployed (${EXTERNAL ?
       deployWallet = (sponsor as MidnightSponsorAdapter).wallet;
     } else {
       expect((await fetch(new URL('/healthz', EXTERNAL))).ok).toBe(true);
+      // the deployed worker syncs its wallet on boot (30 s … minutes on a long chain); wait until the api sees it live
+      const deadline = Date.now() + 10 * 60_000;
+      for (;;) {
+        const w = (await admin('GET', '/v1/admin/wallet')).json();
+        if (w.live?.synced) break;
+        if (Date.now() > deadline) throw new Error(`deployed worker never reported a synced wallet: ${JSON.stringify(w)}`);
+        await new Promise((r) => setTimeout(r, 5000));
+      }
       deployer = await buildSponsorWallet(GENESIS_SEED, { ...ep, feeOverheadSpecks: 0n, feeBlocksMargin: 5 });
       await waitForSync(deployer, 600_000);
       deployWallet = deployer;

@@ -42,7 +42,11 @@ export const createSponsorshipRequest = async (deps: Deps, app: AppContext, inpu
     return { kind: 'replay', request: existing };
   }
   const byHash = await findByTxHash(deps.pool, summary.txHash);
-  if (byHash) throw new AetherDustError('DUPLICATE_REQUEST', 'this transaction was already submitted for sponsorship', { request_id: byHash.requestId, id: byHash.id });
+  if (byHash) {
+    // a concurrent retry can race past the request_id lookup and land here once the first attempt committed: still a replay
+    if (byHash.applicationId === app.applicationId && byHash.requestId === input.requestId) return { kind: 'replay', request: byHash };
+    throw new AetherDustError('DUPLICATE_REQUEST', 'this transaction was already submitted for sponsorship', { request_id: byHash.requestId, id: byHash.id });
+  }
 
   // 3. persist RECEIVED (races on request_id/tx_hash resolve to the idempotent answer)
   let request: SponsorshipRequest;
@@ -51,7 +55,7 @@ export const createSponsorshipRequest = async (deps: Deps, app: AppContext, inpu
       applicationId: app.applicationId, requestId: input.requestId, userId: input.userId,
       claimedContract: input.contract?.toLowerCase(), claimedEntryPoint: input.entryPoint,
       txFormat: summary.format, txHash: summary.txHash, txBytes: Buffer.from(bytes), txSummary: summary,
-      policyVersion: app.policyVersion, ttlAt: summary.minIntentTtl,
+      policyVersion: app.policyVersion, ttlAt: summary.minIntentTtl, at: now,
     }));
   } catch (e) {
     if (isUniqueViolation(e)) {
