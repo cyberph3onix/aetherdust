@@ -120,7 +120,10 @@ export const registerForDust = async (w: SponsorWallet, waitMs: number, log: (m:
   const s = await Rx.firstValueFrom(w.facade.state().pipe(Rx.filter((st) => st.isSynced)));
   if (s.dust.availableCoins.length > 0 && s.dust.balance(new Date()) > 0n) return 'already-has-dust';
   const utxos = s.unshielded.availableCoins.filter((c: any) => c.meta?.registeredForDustGeneration !== true);
-  if (utxos.length === 0 && s.dust.availableCoins.length === 0) throw new Error('no NIGHT UTXOs to register — fund the sponsor’s unshielded address first');
+  const registered = s.unshielded.availableCoins.length - utxos.length;
+  if (s.unshielded.availableCoins.length === 0) throw new Error('no NIGHT UTXOs to register — fund the sponsor’s unshielded address first (see `wallet addresses`)');
+  // re-runnable: UTXOs registered on an earlier run (DUST still settling, ~12 h on public testnets) just need more waiting
+  if (utxos.length === 0) log(`${registered} NIGHT UTXO(s) already registered; DUST not generated yet`);
   if (utxos.length > 0) {
     // the registration pays its own fee from the DUST the UTXOs have *projected* to generate; fees are dynamic
     // (block fullness), so on a busy/fresh chain the wallet may need to wait a while before it can afford it

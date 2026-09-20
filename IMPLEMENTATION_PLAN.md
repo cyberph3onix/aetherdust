@@ -90,8 +90,8 @@ answered `409` via the tx-hash lookup instead of a replay (now a 25-way burst te
 with "block number 1 not found" (`restart: on-failure`), and `compose --wait` refuses the shell-less proof server (started
 apart); (i) the registration fee is paid from the UTXO's *projected* DUST and is dynamic — `register-dust` now
 `estimateRegistration` + `waitForGeneratedDust` before registering; (j) with the embedded test Postgres a failed run exited 0
-(rolldown's signal-exit hook) — the global teardown now pins the exit code. Deferred to Phase 3/5: dashboard wallet page,
-`preprod` recorded run.
+(rolldown's signal-exit hook) — the global teardown now pins the exit code. **CI green on GitHub 2026-09-21: `test`, `docker`, and the on-demand `e2e` job (full `local-midnight` deployment,
+in-process + deployed suites).** Deferred to Phase 3/5: dashboard wallet page, `preprod` recorded run.
 
 ## 1. Midnight research findings
 

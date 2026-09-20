@@ -2,7 +2,7 @@
  * Sponsor wallet CLI (worker image only — it needs the seed):
  *   aetherdust-wallet status          balances, coins, addresses, sync state
  *   aetherdust-wallet addresses       where to send NIGHT (unshielded) — no network sync needed
- *   aetherdust-wallet register-dust   register NIGHT UTXOs for DUST generation and wait for the first DUST
+ *   aetherdust-wallet register-dust [--wait <minutes>]   register NIGHT UTXOs for DUST generation and wait (default 30 min) for the first DUST; re-runnable
  *   aetherdust-wallet new-seed        print a fresh random seed (hex) — store it as AETHERDUST_SPONSOR_SEED(_FILE)
  *   aetherdust-wallet fund <mn_addr…> <night>   send NIGHT from this wallet (e.g. seed a new sponsor from the undeployed genesis wallet)
  */
@@ -38,7 +38,12 @@ const main = async () => {
     }
     console.error(`syncing sponsor wallet on ${ep.network} (${ep.indexer})…`);
     await waitForSync(w, config.AETHERDUST_WALLET_SYNC_TIMEOUT_S * 1000);
-    if (cmd === 'register-dust') console.log(await registerForDust(w, 30 * 60_000, (m) => console.error(m)));
+    if (cmd === 'register-dust') {
+      const i = args.indexOf('--wait');
+      const waitMin = i >= 0 ? Number(args[i + 1]) : 30;
+      if (!Number.isFinite(waitMin) || waitMin <= 0) throw new Error('--wait takes a number of minutes');
+      console.log(await registerForDust(w, waitMin * 60_000, (m) => console.error(m)));
+    }
     if (cmd === 'fund') {
       const [to, night] = args;
       if (!to || !night || !/^\d+(\.\d{1,6})?$/.test(night)) throw new Error('usage: fund <mn_addr…> <night, up to 6 decimals>');
