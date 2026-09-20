@@ -1,0 +1,13 @@
+packages:
+  - packages/*
+  - apps/*
+# spikes/* are standalone projects (own lockfiles), intentionally not part of the workspace.
+allowBuilds:
+  esbuild: true
+  embedded-postgres: true
+  "@embedded-postgres/linux-x64": true
+  classic-level: true
+  msgpackr-extract: true
+overrides:
+  "@midnight-ntwrk/ledger-v8": "8.1.0"
+  "@midnight-ntwrk/onchain-runtime-v3": "3.0.0"

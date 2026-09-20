@@ -1,6 +1,6 @@
 # AetherDust — MVP Implementation Plan
 
-**Status:** Draft v1.1 (Phase 0 complete — see §0.1 and `spikes/sponsor-spike/SPIKE_REPORT.md`) · **Date:** 2026-09-20 · **Source spec:** `prd.md` v1.0
+**Status:** v1.3 (Phase 0 complete — §0.1; Phase 1 complete — §0.2; **Phase 2 complete** — §0.3) · **Date:** 2026-09-20 · **Source spec:** `prd.md` v1.0
 **Scope of this document:** architecture + phased build plan. No implementation code.
 
 ---
@@ -35,6 +35,55 @@ confirmed on-chain three times**; V1–V6 and V8–V12 are answered in `spikes/s
 | Sync vs async (H2) | Facade `submitTransaction` blocks 16–20 s (waits `'Finalized'`). Worker will use `facade.submissionService.submitTransaction(tx, 'Submitted'|'InBlock')` and confirm via indexer. API: `202` + long-poll/GET. |
 | Node error mapping unknown | `1010 Invalid Transaction: Custom error: N` — table in `spikes/sponsor-spike/fixtures/node-1.0.2-error-codes.rs` (138 unpaid fee, 193 replay, 196 dust double-spend, 242 TTL expired, 166 wrong network). |
 | Dependency set | Pin `ledger-v8@8.1.0` **and** `onchain-runtime-v3@3.0.0` via pnpm overrides (duplicate WASM copies break `instanceof`); `InMemoryTransactionHistoryStorage` from `wallet-sdk-abstractions` with facade `WalletEntrySchema`; indexer path `/api/v4/graphql`. |
+
+### 0.2 Phase 1 outcome (2026-09-20)
+
+Delivered: pnpm monorepo (`packages/core|config|db|midnight`, `apps/api|worker`), Postgres schema + migration runner,
+Fastify API with zod validation and generated OpenAPI (`/docs`), scrypt-hashed API keys + admin token, sliding-window
+rate limits (submission vs read buckets), idempotency on `(application, request_id)` **and** `tx_hash`, real ledger-v8
+inspector on Phase 0 fixtures, policy engine (R1–R9), atomic reserve/settle/release budgets (global + per-user, UTC
+periods), state machine with audit events, single-writer worker with `SKIP LOCKED` claims and crash recovery, mock
+sponsor adapter with failure injection and DUST-coin-bounded concurrency, operator CLI, Dockerfile + compose, CI.
+Tests: 24 unit + 27 integration (real Postgres) covering AC3–AC10 plus failure paths, recovery and 20-way concurrency.
+Decisions taken on §23: `202` + `?wait=` long-poll; multi-call rejected unless `allow_multiple_calls`; calendar-UTC
+periods; `user_id` stored raw. Deviation from §3: repositories use plain `pg` + SQL (no ORM) — the two critical
+statements (reservation guard, claim) are clearer as SQL. Tests use `embedded-postgres` when no DB URL is given.
+Phase 1 review (2026-09-20) closed four gaps before sign-off: R7 (network id) is now enforced at the API edge via
+`wellFormed` on real bytes (`INVALID_REQUEST`, ~10 ms/tx; expired TTL → `PREFLIGHT_FAILED`); `OVERSPEND` audit event on
+settle when actual > reserved (§9); credential/ip rate limits moved to `onRequest` so they run before body parsing (§13;
+the per-user limit stays post-validation since it is keyed on the body); a timing race in the `?wait=` test was fixed.
+Fee estimation stays in-process (mock) — the worker estimate RPC (§3 option A) is a Phase 2 deliverable.
+
+### 0.3 Phase 2 outcome (2026-09-20)
+
+Delivered: `MidnightSponsorAdapter` (`packages/midnight/src/midnight/`) — seed → `WalletFacade`, sync, `estimateTransactionFee`,
+`balanceFinalizedTransaction(['dust'])` → `signRecipe` → `finalizeRecipe` → **structural post-merge check** (user calls
+unchanged, exactly +1 `DustSpend`, user identifier preserved, no negative imbalance — replaces the `enforceBalancing`
+pre-flight, which cannot run against a blank v8 state), submit (facade `Finalized` path by default, `submissionService`
+otherwise), confirmation by **identifier** via the indexer, node error mapping (Effect cause walk → `1010 … Custom error: N`;
+`193`/`1013` = already applied → confirm by identifier), wallet status with `maxInFlight` = free DUST coins. Worker: private
+`/internal/estimate` + `/internal/health` RPC (shared secret, §3 option A), periodic **reconciler** for `TIMEOUT`/`UNKNOWN`
+(confirm / fail / expire+release after TTL + grace), `SPONSOR_BALANCE_LOW` floor, `wallet` CLI (`status`, `addresses`,
+`register-dust`, `new-seed`). API: `RemoteSponsorAdapter` (local inspection, remote estimate/health; the api process never
+loads wallet code). Compose profiles `local-midnight` (node 1.0.2 + indexer 4.3.5 + private proof server 8.1.0) and
+`testnet`; `docker-compose.e2e.yml` override for host-side e2e. CI: nightly/on-demand e2e job.
+**E2E (test/e2e, on `undeployed`):** in-process mode (api + worker inside the test, 9 + 1 tests, ~3.5 min): AC1/AC2 with a
+real 0-NIGHT/0-DUST user wallet calling `counter.increment` through api → worker → chain (counter incremented, budget
+settled to the real `vFee`, user still 0/0); **AC3–AC10 all on real bytes** (policy, per-tx fee, global budget, per-user
+allowance, rate limit, idempotency, status tracking); kill-and-restart (persisted merged bytes resubmitted by a fresh
+worker; replay of the same bytes harmless); reconciler (a missed confirmation settled from the indexer by identifier);
+`SPONSOR_BALANCE_LOW`; **operator onboarding** (fresh seed: `fund` 100 NIGHT → arrives in ~23 s → `register-dust` → first
+DUST ~29 s later → fee estimates work). Deployed mode (`pnpm test:e2e:deployed`, 7 tests) drives the real compose
+containers (`--profile local-midnight`, `deploy/e2e.env`) and **SIGKILLs the worker container** mid-sponsorship in both
+windows (during `SPONSORING` → re-queued; during `SUBMITTED` → persisted bytes resubmitted) — both confirm after restart.
+README quickstart (mock profile + `scripts/demo.sh`) verified in Docker. Nightly CI runs both e2e modes. Unit/integration: 35 + 32.
+Findings that changed the design: (a) `UNIQUE(tx_hash)` must **exclude `REJECTED`** rows (migration `0002`) — a policy
+rejection consumes nothing and the DApp's already-signed tx must be sponsorable after the operator fixes the policy;
+(b) two identical calls sealed within the same second are byte-identical (same hash, a replay on-chain) — expected, but the
+e2e user provider now varies the TTL; (c) the node answers `1013 Transaction Already Imported` (not a silent dedupe) when the
+facade resubmits right after inclusion; (d) compose infra: the standalone indexer requires `APP__INFRA__SPO_NODE__*` even on
+`undeployed`, and the proof-server image has no shell (no exec health check possible — the worker retries instead); (e) the
+Dockerfile had never copied `deploy/entrypoint.sh`/`scripts/`. Deferred to Phase 3/5: dashboard wallet page, `preprod` recorded run.
 
 ## 1. Midnight research findings
 

@@ -1,0 +1,93 @@
+# AetherDust self-hosted stack (IMPLEMENTATION_PLAN.md §17). One image, two entrypoints (api / worker).
+# Settings come from deploy/.env (override the file with AETHERDUST_ENV_FILE=.env.other).
+# The sponsor mode is chosen in deploy/.env (see .env.example); compose profiles only add Midnight infrastructure:
+#
+#   (none)             mock sponsor, no Midnight infra:    docker compose -f deploy/docker-compose.yml up --build
+#   local-midnight     private node + indexer + proof server on `undeployed` (.env: AETHERDUST_SPONSOR_ADAPTER=midnight,
+#                      genesis seed, MIDNIGHT_*_URL = the service names below):
+#                        docker compose -f deploy/docker-compose.yml --profile local-midnight up --build
+#   testnet            preview/preprod via public RPC + indexer, private proof server (.env: MIDNIGHT_NETWORK, your seed):
+#                        docker compose -f deploy/docker-compose.yml --profile testnet up --build
+#
+#   bootstrap an app:  docker compose -f deploy/docker-compose.yml run --rm api cli bootstrap --name ExampleDApp
+#   sponsor wallet:    docker compose -f deploy/docker-compose.yml run --rm worker wallet status|addresses|register-dust|new-seed
+#
+# Versions match the official support matrix (2026-09-20): node 1.0.2 · indexer 4.3.5 · proof server 8.1.0 (ledger 8.x).
+name: aetherdust
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: aetherdust
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aetherdust}
+      POSTGRES_DB: aetherdust
+    volumes: ['pgdata:/var/lib/postgresql/data']
+    healthcheck: { test: ['CMD-SHELL', 'pg_isready -U aetherdust'], interval: 5s, timeout: 5s, retries: 20 }
+
+  api:
+    build: { context: .., dockerfile: deploy/Dockerfile }
+    image: aetherdust:local
+    command: api
+    env_file: ['${AETHERDUST_ENV_FILE:-.env}']
+    environment:
+      AETHERDUST_DATABASE_URL: postgres://aetherdust:${POSTGRES_PASSWORD:-aetherdust}@postgres:5432/aetherdust
+      AETHERDUST_API_PORT: '8080'
+      AETHERDUST_WORKER_URL: http://worker:8081
+    ports: ['${AETHERDUST_PORT:-8080}:8080']
+    depends_on: { postgres: { condition: service_healthy } }
+    healthcheck: { test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"], interval: 10s, timeout: 5s, retries: 10 }
+
+  worker:
+    image: aetherdust:local
+    command: worker
+    env_file: ['${AETHERDUST_ENV_FILE:-.env}']
+    environment:
+      AETHERDUST_DATABASE_URL: postgres://aetherdust:${POSTGRES_PASSWORD:-aetherdust}@postgres:5432/aetherdust
+      AETHERDUST_AUTO_MIGRATE: 'false'
+      AETHERDUST_WORKER_INTERNAL_HOST: '0.0.0.0'
+      AETHERDUST_WORKER_INTERNAL_PORT: '8081'
+    depends_on: { api: { condition: service_healthy } }
+    # retried until the (profile-provided) node / indexer / proof server are up; the wallet sync itself takes ~30 s+
+    restart: unless-stopped
+    # no ports: the worker and its /internal RPC are only reachable on the compose network (plan §18)
+
+  # ---------- profile local-midnight / testnet: private proof server (sees sponsor witness data — never publish) ----------
+  proof-server:
+    profiles: [local-midnight, testnet]
+    image: midnightntwrk/proof-server:8.1.0
+    command: ['midnight-proof-server -v']
+    environment: { RUST_BACKTRACE: 'full' }
+    # the image is a Nix build with no shell/curl, so no exec health check is possible; the worker retries until it answers
+    healthcheck: { disable: true }
+
+  # ---------- profile local-midnight: `undeployed` chain, genesis-funded ----------
+  midnight-node:
+    profiles: [local-midnight]
+    image: midnightntwrk/midnight-node:1.0.2
+    environment:
+      CFG_PRESET: 'dev'
+      SIDECHAIN_BLOCK_BENEFICIARY: '04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e'
+    ports: ['${MIDNIGHT_NODE_PORT:-9944}:9944'] # exposed so a DApp / the e2e user wallet on the host can use the chain
+    healthcheck: { test: ['CMD', 'curl', '-f', 'http://localhost:9944/health'], interval: 2s, timeout: 5s, retries: 30, start_period: 20s }
+
+  indexer:
+    profiles: [local-midnight]
+    image: midnightntwrk/indexer-standalone:4.3.5
+    environment:
+      RUST_LOG: 'indexer=info,chain_indexer=info,indexer_api=info,wallet_indexer=info,indexer_common=info,fastrace_opentelemetry=off,info'
+      APP__APPLICATION__NETWORK_ID: 'undeployed'
+      APP__INFRA__NODE__URL: ws://midnight-node:9944
+      # the standalone indexer insists on SPO-node settings even though `undeployed` has no SPO (same as the native script)
+      APP__INFRA__SPO_NODE__URL: ws://midnight-node:9944
+      APP__INFRA__SPO_NODE__BLOCKFROST_ID: dummy-not-using-spo
+      APP__INFRA__STORAGE__PASSWORD: indexer
+      APP__INFRA__PUB_SUB__PASSWORD: indexer
+      APP__INFRA__LEDGER_STATE_STORAGE__PASSWORD: indexer
+      APP__INFRA__SECRET: '303132333435363738393031323334353637383930313233343536373839303132'
+    ports: ['${MIDNIGHT_INDEXER_PORT:-8088}:8088']
+    healthcheck: { test: ['CMD-SHELL', 'cat /var/run/indexer-standalone/running'], interval: 5s, timeout: 5s, retries: 30, start_period: 10s }
+    depends_on: { midnight-node: { condition: service_healthy } }
+
+volumes:
+  pgdata: {}

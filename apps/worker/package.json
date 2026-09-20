@@ -1,0 +1,36 @@
+{
+  "name": "@aetherdust/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx --conditions=development watch src/main.ts",
+    "start": "node dist/main.js",
+    "wallet": "tsx --conditions=development src/wallet-cli.ts"
+  },
+  "dependencies": {
+    "@aetherdust/config": "workspace:*",
+    "@aetherdust/core": "workspace:*",
+    "@aetherdust/db": "workspace:*",
+    "@aetherdust/midnight": "workspace:*",
+    "@midnightntwrk/wallet-sdk-hd": "3.0.3",
+    "fastify": "^5.0.0",
+    "pg": "^8.13.0",
+    "pino": "^10.0.0",
+    "pino-pretty": "^13.0.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0"
+  }
+}

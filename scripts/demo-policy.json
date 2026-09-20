@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "contracts": {
+    "3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9": ["increment"],
+    "abababababababababababababababababababababababababababababababab": ["claim", "register"]
+  },
+  "limits": { "period": "daily", "global_budget_dust": "0.02", "per_user_budget_dust": "0.01", "max_fee_per_tx_dust": "0.1" },
+  "rate_limit": { "requests_per_minute_per_credential": 60, "requests_per_minute_per_user": 10, "requests_per_minute_per_ip": 120 }
+}

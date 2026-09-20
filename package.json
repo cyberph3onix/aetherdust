@@ -1,0 +1,51 @@
+{
+  "name": "aetherdust",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hostable DUST sponsorship control plane for Midnight DApps.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' --filter './apps/*' run build",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "dev:api": "pnpm --filter @aetherdust/api dev",
+    "dev:worker": "pnpm --filter @aetherdust/worker dev",
+    "db:migrate": "pnpm --filter @aetherdust/db migrate",
+    "aetherdust": "pnpm --filter @aetherdust/api cli",
+    "test:e2e": "AETHERDUST_E2E=1 vitest run --project e2e",
+    "test:e2e:deployed": "AETHERDUST_E2E=1 AETHERDUST_E2E_API_URL=${AETHERDUST_E2E_API_URL:-http://127.0.0.1:8080} vitest run --project e2e test/e2e/sponsored.e2e.test.ts"
+  },
+  "devDependencies": {
+    "@aetherdust/api": "workspace:*",
+    "@aetherdust/config": "workspace:*",
+    "@aetherdust/core": "workspace:*",
+    "@aetherdust/db": "workspace:*",
+    "@aetherdust/midnight": "workspace:*",
+    "@aetherdust/worker": "workspace:*",
+    "@midnight-ntwrk/compact-js": "2.5.1",
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/midnight-js": "4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.1.1",
+    "@midnightntwrk/wallet-sdk-hd": "3.0.3",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
+    "embedded-postgres": "18.4.0-beta.17",
+    "fastify": "^5.4.0",
+    "pg": "^8.23.0",
+    "pino": "^10.0.0",
+    "rxjs": "^7.8.2",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}

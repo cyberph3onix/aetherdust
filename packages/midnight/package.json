@@ -1,0 +1,48 @@
+{
+  "name": "@aetherdust/midnight",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./wallet": {
+      "types": "./src/midnight/wallet.ts",
+      "development": "./src/midnight/wallet.ts",
+      "import": "./dist/midnight/wallet.js"
+    }
+  },
+  "files": [
+    "dist",
+    "fixtures"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aetherdust/config": "workspace:*",
+    "@aetherdust/core": "workspace:*",
+    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/midnight-js": "4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
+    "@midnightntwrk/wallet-sdk-abstractions": "2.1.0",
+    "@midnightntwrk/wallet-sdk-address-format": "3.1.2",
+    "@midnightntwrk/wallet-sdk-dust-wallet": "4.2.0",
+    "@midnightntwrk/wallet-sdk-facade": "4.1.0",
+    "@midnightntwrk/wallet-sdk-hd": "3.0.3",
+    "@midnightntwrk/wallet-sdk-shielded": "3.0.2",
+    "@midnightntwrk/wallet-sdk-unshielded-wallet": "3.1.0",
+    "effect": "3.22.2",
+    "rxjs": "^7.8.2",
+    "ws": "^8.20.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "contractAddress": "3d6af3ce469730602af47497b1709fd7d4769e8c4a0a43c409c5d3391982b5b9",
+  "userTxHash": "c5fc53174969993bbed5c102b7994bc6a10ffd4eb3110208dc8511779aa5abd4",
+  "userIdentifiers": [
+    "00c726071eb0075bf4abb6bd93943bfd532ca9391389c37093f2bced59ee94d0de"
+  ],
+  "mergedTxHash": "7bdafa3c8410479e443c8829474ff34199f4ea39eb0c8cd4b9e3ba62f1c281e9",
+  "mergedIdentifiers": [
+    "0025b8fd692c45c091eb606322b69b2e695285295508d49f8ba4b395d389af4f45",
+    "00c726071eb0075bf4abb6bd93943bfd532ca9391389c37093f2bced59ee94d0de"
+  ],
+  "actualFeeSpecks": "12547459533236"
+}
