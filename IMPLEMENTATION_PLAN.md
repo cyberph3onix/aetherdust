@@ -1,6 +1,6 @@
 # AetherDust — MVP Implementation Plan
 
-**Status:** v1.3 (Phase 0 complete — §0.1; Phase 1 complete — §0.2; **Phase 2 complete** — §0.3) · **Date:** 2026-09-20 · **Source spec:** `prd.md` v1.0
+**Status:** v1.4 (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; **Phase 3 built, V7 pending** — §0.4) · **Date:** 2026-09-20 · **Source spec:** `prd.md` v1.0
 **Scope of this document:** architecture + phased build plan. No implementation code.
 
 ---
@@ -92,6 +92,25 @@ apart); (i) the registration fee is paid from the UTXO's *projected* DUST and is
 `estimateRegistration` + `waitForGeneratedDust` before registering; (j) with the embedded test Postgres a failed run exited 0
 (rolldown's signal-exit hook) — the global teardown now pins the exit code. **CI green on GitHub 2026-09-21: `test`, `docker`, and the on-demand `e2e` job (full `local-midnight` deployment,
 in-process + deployed suites).** Deferred to Phase 3/5: dashboard wallet page, `preprod` recorded run.
+
+### 0.4 Phase 3 outcome (2026-09-21, V7 pending)
+
+Delivered: `@aetherdust/client` (`packages/client`, browser + Node, fetch-only) — `createAetherDustClient` (`sponsor()`
+= POST + long-poll + GET polling until terminal, `until:'approved'` fast path, `getRequest`, `waitForOutcome`, `usage`),
+typed `AetherDustError` (`code`, `status`, `retryable`, `rejectedByPolicy`, `retryAfterSeconds`, persisted `request`),
+`findAetherDustError` (midnight-js wraps `submitTx` errors; the cause chain carries ours), `createSponsoredMidnightProvider`
+(`WalletProvider.balanceTx` → connector `balanceUnsealedTransaction(hex, { payFees:false })` → deserialize;
+`MidnightProvider.submitTx` → sponsor with a request id derived from the tx hash → identifier to watch), `sponsor()` helper
+(PRD §32). Tests: 12 unit (fake fetch/wallet, real fixture bytes) + 5 integration (real API over HTTP, mock sponsor).
+**Real chain:** `test/e2e` "SDK" test runs the exact provider path over a connector-shaped wallet-SDK shim
+(`test/e2e/connector-shim.ts`): `counter.increment` confirmed via `createSponsoredMidnightProvider`, `payFees:false`
+observed on the wire, a policy rejection surfaces to the DApp as `ENTRY_POINT_NOT_ALLOWED`. `examples/example-dapp`:
+Vite + plain TS counter DApp (Lace via `window.midnight.*`, WASM ledger/runtime, ZK assets over fetch, browser level DB),
+`deploy-counter` script (sponsor wallet, self-paying), on-page V7 diagnostic (counts `DustSpend`s in what the wallet
+returns), runbook in its README; bundles in CI.
+**Open — needs a human + Lace on preprod (V7):** does Lace honour `payFees:false`? The DApp reports it either way; if
+not, AetherDust rejects with R6 and the Node-side path above is the documented fallback demo. Wire encoding to the
+connector assumed hex (ecosystem convention; overridable via `encode`/`decode`).
 
 ## 1. Midnight research findings
 

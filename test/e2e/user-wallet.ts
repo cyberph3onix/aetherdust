@@ -43,7 +43,8 @@ export const publicKeysOf = async (w: SponsorWallet) => {
 
 const ttl30 = () => new Date(Date.now() + 30 * 60_000);
 
-const baseProviders = (ep: MidnightEndpoints, keys: { coin: string; enc: string }, storeDir: string, wp: WalletProvider & MidnightProvider) => {
+/** The non-wallet providers a counter DApp needs (private state, indexer, zk assets, proof server) around any wallet/midnight provider. */
+export const providersWith = (ep: MidnightEndpoints, keys: { coin: string; enc: string }, storeDir: string, wp: WalletProvider & MidnightProvider) => {
   const zk = new NodeZkConfigProvider<'increment'>(ZK_CONFIG_PATH);
   return {
     privateStateProvider: levelPrivateStateProvider<'counterPrivateState'>({
@@ -73,7 +74,7 @@ export const userProviders = (ep: MidnightEndpoints, w: UserWallet, keys: { coin
     },
     submitTx: (tx) => onSealed(tx),
   };
-  return baseProviders(ep, keys, storeDir, wp);
+  return providersWith(ep, keys, storeDir, wp);
 };
 
 /** Ordinary self-paying providers (used to deploy the counter with the funded sponsor wallet). */
@@ -87,7 +88,7 @@ export const selfPayingProviders = (ep: MidnightEndpoints, w: SponsorWallet, key
     },
     submitTx: (tx) => w.facade.submitTransaction(tx),
   };
-  return baseProviders(ep, keys, storeDir, wp);
+  return providersWith(ep, keys, storeDir, wp);
 };
 
 export const deployCounter = async (providers: ReturnType<typeof selfPayingProviders>) => {

@@ -1,0 +1,41 @@
+{
+  "name": "@aetherdust/client",
+  "version": "0.1.0",
+  "description": "AetherDust client SDK: sponsor Midnight transactions from a DApp (REST client + midnight-js providers for the DApp connector).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/midnight-js": "^4.1.1"
+  },
+  "devDependencies": {
+    "@aetherdust/config": "workspace:*",
+    "@aetherdust/core": "workspace:*",
+    "@aetherdust/db": "workspace:*",
+    "@aetherdust/midnight": "workspace:*",
+    "@aetherdust/worker": "workspace:*",
+    "@midnight-ntwrk/dapp-connector-api": "4.0.1",
+    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/midnight-js": "4.1.1",
+    "fastify": "^5.4.0",
+    "pg": "^8.23.0",
+    "pino": "^10.0.0"
+  }
+}

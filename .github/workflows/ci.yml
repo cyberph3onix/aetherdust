@@ -23,6 +23,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r typecheck
       - run: pnpm build
+      - run: pnpm --filter @aetherdust/example-dapp build # the browser DApp must bundle (WASM, shims)
       - run: pnpm test
         env:
           AETHERDUST_TEST_DATABASE_URL: postgres://aetherdust:aetherdust@localhost:5432/aetherdust_test

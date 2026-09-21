@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AetherDust counter</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 760px; margin: 2rem auto; padding: 0 1rem; line-height: 1.45; }
+    fieldset { border: 1px solid #8884; border-radius: 8px; margin: 0 0 1rem; }
+    label { display: block; margin: .4rem 0; }
+    input { width: 100%; box-sizing: border-box; padding: .35rem .5rem; font: inherit; }
+    button { font: inherit; padding: .5rem 1rem; margin-right: .5rem; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+    #log { font-family: ui-monospace, monospace; font-size: .85rem; white-space: pre-wrap; background: #8881; padding: .75rem; border-radius: 8px; min-height: 8rem; }
+    .ok { color: #2a7; } .bad { color: #c33; } .muted { opacity: .7; }
+    .row { display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap; }
+    .big { font-size: 2rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>AetherDust counter</h1>
+  <p class="muted">The wallet signs a <code>counter.increment</code> with <strong>fees unpaid</strong> (<code>payFees:false</code>); AetherDust's sponsor pays the DUST. A wallet with 0 NIGHT / 0 DUST can use the DApp.</p>
+
+  <fieldset>
+    <legend>1 · Wallet</legend>
+    <label>Network (must match the wallet) <input id="network" placeholder="preprod" /></label>
+    <div class="row">
+      <button id="connect">Connect wallet</button>
+      <span id="wallet" class="muted">not connected</span>
+    </div>
+    <div id="balances" class="muted"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>2 · AetherDust</legend>
+    <label>API base URL <input id="baseUrl" placeholder="http://localhost:8080" /></label>
+    <label>API key <input id="apiKey" placeholder="ad_live_…" /></label>
+    <label>User id (pseudonymous) <input id="userId" placeholder="demo-user-1" /></label>
+    <label>Counter contract address (64 hex) <input id="contract" placeholder="deployed with `pnpm deploy-counter`" /></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>3 · Counter</legend>
+    <div class="row"><span>on-chain value:</span> <span id="value" class="big">–</span> <button id="refresh">Refresh</button></div>
+    <div class="row" style="margin-top:.5rem">
+      <button id="increment" disabled>Increment (sponsored)</button>
+      <span id="status" class="muted"></span>
+    </div>
+  </fieldset>
+
+  <div id="log"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

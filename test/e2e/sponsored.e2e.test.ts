@@ -30,7 +30,9 @@ import { buildInternalServer, Worker, type WorkerDeps } from '@aetherdust/worker
 import { makeLimiter, type Deps } from '../../apps/api/src/deps.js';
 import { buildServer } from '../../apps/api/src/server.js';
 import { closeTestPool, testPool, truncateAll } from '../db.js';
-import { buildUserWallet, deployCounter, findCounter, publicKeysOf, readCounter, selfPayingProviders, snapshot, userProviders } from './user-wallet.js';
+import { buildUserWallet, deployCounter, findCounter, providersWith, publicKeysOf, readCounter, selfPayingProviders, snapshot, userProviders } from './user-wallet.js';
+import { createAetherDustClient, createSponsoredMidnightProvider, findAetherDustError } from '@aetherdust/client';
+import { connectorShim } from './connector-shim.js';
 
 const E2E = process.env.AETHERDUST_E2E === '1';
 const EXTERNAL = process.env.AETHERDUST_E2E_API_URL;
@@ -47,6 +49,7 @@ const env = {
 const ep = midnightEndpoints(loadConfig(env));
 
 let pool: Pool; let sponsor: SponsorAdapter; let internal: FastifyInstance; let api: FastifyInstance; let worker: Worker; let workerDeps: WorkerDeps;
+let apiUrl: string; // http base url of the api under test (listening port in-process, or the external one)
 let deployer: SponsorWallet | undefined; // external mode: a funded wallet of our own to deploy the counter
 let token: string; let appId: string; let contractAddress: string; let storeDir: string;
 let user: Awaited<ReturnType<typeof buildUserWallet>>; let userKeys: { coin: string; enc: string };
@@ -122,8 +125,11 @@ describe.skipIf(!E2E)(`e2e: sponsored contract calls on undeployed (${EXTERNAL ?
       const apiDeps: Deps = { config: apiConfig, pool, adapter: await createSponsorAdapter(apiConfig, 'api'), limiter: makeLimiter(), log, now: () => new Date() };
       expect(apiDeps.adapter).toBeInstanceOf(RemoteSponsorAdapter);
       api = await buildServer(apiDeps);
+      await api.listen({ host: '127.0.0.1', port: 0 }); // the SDK talks real HTTP
+      apiUrl = `http://127.0.0.1:${(api.server.address() as any).port}`;
       deployWallet = (sponsor as MidnightSponsorAdapter).wallet;
     } else {
+      apiUrl = EXTERNAL;
       expect((await fetch(new URL('/healthz', EXTERNAL))).ok).toBe(true);
       // the deployed worker syncs its wallet on boot (30 s … minutes on a long chain); wait until the api sees it live
       const deadline = Date.now() + 10 * 60_000;
@@ -188,6 +194,34 @@ describe.skipIf(!E2E)(`e2e: sponsored contract calls on undeployed (${EXTERNAL ?
 
     const userAfter = await snapshot(user);
     expect(userAfter.nightStars).toBe(0n); expect(userAfter.dustSpecks).toBe(0n);
+  }, 5 * 60_000);
+
+  it('SDK (Phase 3): createSponsoredMidnightProvider over a connector-shaped wallet drives counter.increment end to end', async () => {
+    // What a browser DApp does with Lace, with the connector replaced by a wallet-SDK shim (plan §22 Phase 3 fallback)
+    const client = createAetherDustClient({ baseUrl: apiUrl, apiKey: token, userId: 'sdk-user', waitMs: 30_000, timeoutMs: 180_000 });
+    let n = 100;
+    const shim = connectorShim(user, () => new Date(Date.now() + 30 * 60_000 + ++n * 1000));
+    const seen: string[] = [];
+    const sponsored = await createSponsoredMidnightProvider({ client, wallet: shim, requestIdPrefix: 'sdk', onRequest: (r) => seen.push(r.status) });
+    expect(sponsored.keys.coinPublicKey).toBe(userKeys.coin);
+    const providers = providersWith(ep, userKeys, path.join(storeDir, 'sdk'), sponsored);
+    const sdkCounter = await findCounter(providers as any, contractAddress);
+    const before = await readCounter(ep, contractAddress);
+    const res = await sdkCounter.callTx.increment();
+    expect(res.public.blockHeight).toBeGreaterThan(0);
+    expect(shim.calls).toEqual([{ payFees: false }]);
+    expect(seen).toEqual(['confirmed']);
+    expect(await readCounter(ep, contractAddress)).toBe((before ?? 0n) + 1n);
+    const list = (await admin('GET', `/v1/admin/applications/${appId}/requests`)).json() as any[];
+    const mine = list.find((r) => r.user_id === 'sdk-user');
+    expect(mine).toMatchObject({ internal_status: 'CONFIRMED', request_id: expect.stringMatching(/^sdk:[0-9a-f]{64}$/), transaction_id: res.public.txId });
+    // a policy rejection surfaces to the DApp as a typed AetherDustError, before any sponsor work
+    await setPolicy([]);
+    const err = await sdkCounter.callTx.increment().catch((e) => e);
+    const ad = findAetherDustError(err); // midnight-js wraps submitTx errors; the typed error is on the cause chain
+    expect(ad).toMatchObject({ code: 'ENTRY_POINT_NOT_ALLOWED', rejectedByPolicy: true, request: { internal_status: 'REJECTED' } });
+    expect(shim.calls).toHaveLength(2); // the wallet still balanced+sealed; AetherDust refused and nothing was spent
+    await setPolicy(['increment']);
   }, 5 * 60_000);
 
   it('AC10: the operator can follow a request from submission to confirmation (public status + audit trail)', async () => {

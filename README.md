@@ -52,6 +52,30 @@ UTXOs to raise it). The proof server sees the sponsor's witness data and must st
 (HTTP 503) is returned when the wallet would drop below `AETHERDUST_MIN_SPONSOR_DUST`. Fees are dynamic (block
 fullness): the api reserves `estimate × (1 + margin)`, the worker settles the real `DustSpend.vFee`.
 
+## Client SDK (`@aetherdust/client`)
+
+Browser and Node. Two layers: a REST client, and midnight-js providers for the DApp connector (Lace).
+
+```ts
+import { createAetherDustClient, createSponsoredMidnightProvider, findAetherDustError } from '@aetherdust/client';
+
+const client = createAetherDustClient({ baseUrl: 'https://sponsor.example.com', apiKey: 'ad_live_…', userId: 'user-42' });
+
+// midnight-js: the wallet balances+signs WITHOUT paying fees, AetherDust sponsors and submits
+const lace = await window.midnight.lace.connect('preprod');
+const sponsored = await createSponsoredMidnightProvider({ client, wallet: lace });
+const providers = { ...otherProviders, walletProvider: sponsored, midnightProvider: sponsored };
+await counter.callTx.increment();          // errors: findAetherDustError(e)?.code → 'USER_LIMIT_EXCEEDED' …
+
+// or, with a sealed transaction in hand (PRD §32):
+const r = await client.sponsor({ requestId: 'dapp:user-42:claim:7', transaction: sealedTx });  // → confirmed request
+```
+
+`sponsor()` long-polls then polls until the request is `confirmed` (or throws a typed `AetherDustError` with `code`,
+`retryable`, `rejectedByPolicy`, `retryAfterSeconds`, and the persisted `request` for rejections). `until: 'approved'`
+returns as soon as the request is queued; the user's own transaction identifier survives the merge and can be watched
+right away. The example DApp is in [`examples/example-dapp`](examples/example-dapp) (runbook for the Lace check inside).
+
 ## Integration in three calls
 
 1. Build the transaction as usual with midnight-js; have the wallet balance it **without paying fees**
@@ -108,7 +132,9 @@ on restart the worker drains those first, then resumes.
 | `apps/api` | Fastify API (`/v1/sponsorship/*`, `/v1/usage`, `/v1/admin/*`, `/docs`), operator CLI |
 | `apps/worker` | single-writer sponsorship worker: recovery, reconciler, private `/internal` RPC, `wallet` CLI |
 | `deploy/` | Dockerfile, compose, `.env.example` |
-| `test/e2e` | real-chain e2e: user wallet (0 NIGHT/0 DUST) + counter contract → api → worker → confirmed |
+| `packages/client` | `@aetherdust/client`: REST client + connector-backed midnight-js providers, typed errors |
+| `examples/example-dapp` | Vite counter DApp: Lace (`payFees:false`) + AetherDust; `deploy-counter` script; V7 runbook |
+| `test/e2e` | real-chain e2e: user wallet (0 NIGHT/0 DUST) + counter contract → api → worker → confirmed; the SDK over a connector-shaped wallet |
 | `spikes/sponsor-spike` | Phase 0: the live proof of DUST sponsorship on Midnight (+ `deploy/native/stack.sh` to run the chain without Docker) |
 
 ## Development
