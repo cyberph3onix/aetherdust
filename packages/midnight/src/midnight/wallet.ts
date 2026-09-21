@@ -9,7 +9,7 @@ import { setNetworkId, getNetworkId } from '@midnight-ntwrk/midnight-js/network-
 import { InMemoryTransactionHistoryStorage } from '@midnightntwrk/wallet-sdk-abstractions';
 import { MidnightBech32m, UnshieldedAddress } from '@midnightntwrk/wallet-sdk-address-format';
 import { DustWallet } from '@midnightntwrk/wallet-sdk-dust-wallet';
-import { WalletEntrySchema, WalletFacade, type BalancingRecipe } from '@midnightntwrk/wallet-sdk-facade';
+import { WalletEntrySchema, WalletFacade, type BalancingRecipe, type FacadeState } from '@midnightntwrk/wallet-sdk-facade';
 import { HDWallet, Roles } from '@midnightntwrk/wallet-sdk-hd';
 import { ShieldedWallet } from '@midnightntwrk/wallet-sdk-shielded';
 import { createKeystore, PublicKey, UnshieldedWallet, type UnshieldedKeystore } from '@midnightntwrk/wallet-sdk-unshielded-wallet';
@@ -71,13 +71,29 @@ export const buildSponsorWallet = async (seedHex: string, o: SponsorWalletOption
   return { facade, shieldedSecretKeys, dustSecretKey, unshieldedKeystore, network: o.network };
 };
 
+/** One line per sub-wallet: applied/highest index and connection state — enough to tell "slow" from "stuck". */
+export const syncProgress = (s: FacadeState): string => {
+  const p = (label: string, w: any) => {
+    const pr = w?.progress;
+    if (!pr) return `${label} n/a`;
+    // shielded/dust report appliedIndex; unshielded reports appliedId — the SDK's own completeness check is what matters
+    const applied = pr.appliedIndex ?? pr.appliedId ?? '?';
+    const done = typeof pr.isStrictlyComplete === 'function' ? pr.isStrictlyComplete() : undefined;
+    return `${label} ${applied}${done === true ? ' ✓' : done === false ? ' …' : ''}${pr.isConnected ? '' : ' (disconnected)'}`;
+  };
+  return `${p('shielded', s.shielded)} · ${p('unshielded', s.unshielded)} · ${p('dust', s.dust)} · synced=${s.isSynced}`;
+};
+
 /** Resolves once all three sub-wallets report synced (the facade's `isSynced` requires this in 4.1.0). */
-export const waitForSync = (w: SponsorWallet, timeoutMs: number) =>
-  Rx.firstValueFrom(w.facade.state().pipe(
+export const waitForSync = (w: SponsorWallet, timeoutMs: number, onProgress?: (line: string) => void) => {
+  let last = 0;
+  return Rx.firstValueFrom(w.facade.state().pipe(
     Rx.throttleTime(1_000, undefined, { leading: true, trailing: true }),
+    Rx.tap((s) => { if (onProgress && Date.now() - last > 30_000) { last = Date.now(); onProgress(syncProgress(s)); } }),
     Rx.filter((s) => s.isSynced),
     Rx.timeout({ first: timeoutMs, with: () => Rx.throwError(() => new Error(`sponsor wallet sync timeout after ${timeoutMs} ms`)) }),
   ));
+};
 
 export interface WalletSnapshot {
   synced: boolean;

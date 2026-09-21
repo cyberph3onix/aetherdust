@@ -45,7 +45,7 @@ export class MidnightSponsorAdapter implements SponsorAdapter {
   async start(): Promise<void> {
     const t0 = Date.now();
     this.#w = await buildSponsorWallet(this.o.seedHex, this.o);
-    await waitForSync(this.#w, this.o.syncTimeoutMs);
+    await waitForSync(this.#w, this.o.syncTimeoutMs, (line) => this.o.log?.info({ progress: line }, 'sponsor wallet syncing'));
     const s = await snapshot(this.#w);
     this.o.log?.info({ syncMs: Date.now() - t0, dustCoins: s.dustCoins, dustSpecks: s.dustSpecks.toString(), nightStars: s.nightStars.toString(), unshieldedAddress: s.unshieldedAddress }, 'sponsor wallet synced');
     if (s.dustCoins === 0) this.o.log?.warn({ unshieldedAddress: s.unshieldedAddress }, 'sponsor has no DUST coins — fund NIGHT and run `aetherdust-wallet register-dust`');

@@ -37,7 +37,7 @@ const main = async () => {
       return;
     }
     console.error(`syncing sponsor wallet on ${ep.network} (${ep.indexer})…`);
-    await waitForSync(w, config.AETHERDUST_WALLET_SYNC_TIMEOUT_S * 1000);
+    await waitForSync(w, config.AETHERDUST_WALLET_SYNC_TIMEOUT_S * 1000, (line) => console.error(`  sync: ${line}`));
     if (cmd === 'register-dust') {
       const i = args.indexOf('--wait');
       const waitMin = i >= 0 ? Number(args[i + 1]) : 30;
