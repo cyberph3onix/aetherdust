@@ -22,7 +22,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
-    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/ledger-v8": "8.1.2",
     "@midnight-ntwrk/midnight-js": "^4.1.1"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "@aetherdust/midnight": "workspace:*",
     "@aetherdust/worker": "workspace:*",
     "@midnight-ntwrk/dapp-connector-api": "4.0.1",
-    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/ledger-v8": "8.1.2",
     "@midnight-ntwrk/midnight-js": "4.1.1",
     "fastify": "^5.4.0",
     "pg": "^8.23.0",

@@ -21,6 +21,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      # supply chain (plan §18). `elliptic` has no patched release and only reaches the example DApp's build
+      # tooling, so the gate is `high` and the audit is re-read by hand on every dependency change.
+      - run: pnpm audit --audit-level high
       - run: pnpm -r typecheck
       - run: pnpm build
       - run: pnpm --filter @aetherdust/example-dapp build # the browser DApp must bundle (WASM, shims)
@@ -40,6 +43,7 @@ jobs:
         if: failure()
         with: { name: playwright-traces, path: test-results/, retention-days: 7 }
   docker:
+    # AC12: a developer can deploy this with Docker and configure it — built here exactly as the quickstart says.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +52,22 @@ jobs:
       - run: docker run --rm aetherdust:ci wallet 2>&1 | grep -q usage
       - run: docker build -f deploy/Dockerfile.dashboard -t aetherdust-dashboard:ci .
       - run: docker run --rm --entrypoint sh aetherdust-dashboard:ci -c 'test -s /usr/share/nginx/html/index.html'
+      - name: quickstart on a clean machine (mock profile: up → bootstrap → demo → dashboard → metrics)
+        run: |
+          set -euo pipefail
+          printf 'AETHERDUST_ADMIN_TOKEN=ci-admin-token-0123456789abcdef\nAETHERDUST_SPONSOR_ADAPTER=mock\nAETHERDUST_MOCK_CONFIRM_MS=300\n' > deploy/.env
+          docker compose -f deploy/docker-compose.yml up -d --wait --wait-timeout 600
+          curl -sf localhost:8080/healthz | grep -q '"ok":true'
+          curl -sf -o /dev/null localhost:8090/                                      # dashboard
+          curl -sf -o /dev/null -H 'Authorization: Bearer ci-admin-token-0123456789abcdef' localhost:8090/v1/admin/applications
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/metrics)" = 401   # /metrics needs a token
+          curl -sf -H 'Authorization: Bearer ci-admin-token-0123456789abcdef' localhost:8080/metrics | grep -q '^aetherdust_build_info'
+          docker compose -f deploy/docker-compose.yml run --rm api cli bootstrap --name CiDApp --policy /app/scripts/demo-policy.json > bootstrap.json
+          AETHERDUST_API_KEY=$(python3 -c "import json,re,sys;print(json.loads(re.sub(r'^[^{]*','',open('bootstrap.json').read(),flags=re.S))['api_key'])") scripts/demo.sh
+      - if: always()
+        run: docker compose -f deploy/docker-compose.yml logs --no-color api worker | tail -100
+      - if: always()
+        run: docker compose -f deploy/docker-compose.yml down -v
   e2e:
     # real Midnight stack (node 1.0.2 · indexer 4.3.5 · proof server 8.1.0) — nightly and on demand, ~5 min
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

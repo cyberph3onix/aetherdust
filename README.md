@@ -13,8 +13,12 @@ dry run, API keys, wallet) and Prometheus `/metrics` on both processes. Phase 3 
 0 DUST through a contract call sponsored and confirmed on **preprod** (`@aetherdust/client` +
 `createSponsoredMidnightProvider`, Lace honouring `payFees:false`); the control plane, the real sponsor worker and the
 e2e suite on a local `undeployed` chain were proven in Phases 1–2. The mock sponsor remains for development.
-Next: hardening + release (Phase 5). Plan: [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md); the flow was first proven in
+Phase 5 is under way: docs, the security pass, the load test and the version-pin review are done (§0.6); the
+recorded preprod run and the `v0.1.0` tag are what remain. Plan: [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md); the flow was first proven in
 [`spikes/sponsor-spike/SPIKE_REPORT.md`](spikes/sponsor-spike/SPIKE_REPORT.md).
+
+**Docs:** [quickstart](docs/quickstart.md) · [integration guide](docs/integration.md) · [policy reference](docs/policy.md) ·
+[runbooks](docs/runbooks.md) · [observability](docs/observability.md) · [threat model](docs/threat-model.md)
 
 ## Quickstart (Docker, mock sponsor)
 

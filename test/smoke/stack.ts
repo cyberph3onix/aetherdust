@@ -3,8 +3,8 @@
  * AETHERDUST_TEST_DATABASE_URL), the api, a mock-sponsor worker, and seed traffic — one confirmed sponsorship,
  * one policy rejection and one in-flight request, so every dashboard page has something to show.
  *
- * Run standalone (`pnpm tsx test/smoke/stack.ts`) to poke at the dashboard by hand; Playwright starts it as a
- * `webServer` and stops it again.
+ * Run standalone (`pnpm smoke:stack`) to poke at the dashboard by hand — with AETHERDUST_SMOKE_WORKER=loop the
+ * worker keeps polling, so new requests are sponsored too. Playwright starts it as a `webServer` and stops it again.
  */
 import { loadConfig } from '@aetherdust/config';
 import { dustToSpecks } from '@aetherdust/core';
@@ -101,6 +101,9 @@ export const startStack = async () => {
   await sponsor('smoke-rejected', 'mallory', [{ address: 'cd'.repeat(32), entryPoint: 'increment' }]); // CONTRACT_NOT_ALLOWED
   await worker.snapshot();
   await backfill(pool, appId);
+  // by default the worker only drains what the seed created, so the smoke assertions are deterministic;
+  // AETHERDUST_SMOKE_WORKER=loop starts the polling loop, for poking the dashboard (or the load test) by hand
+  if (process.env.AETHERDUST_SMOKE_WORKER === 'loop') await worker.start();
 
   const stop = async () => { await worker.stop(); await api.close(); await pool.end(); await stopPg(); };
   return { url: `http://127.0.0.1:${PORT}`, appId, token, adminToken: ADMIN_TOKEN, stop };

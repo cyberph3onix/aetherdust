@@ -5,7 +5,8 @@ set -euo pipefail
 URL=${AETHERDUST_URL:-http://127.0.0.1:8080}
 KEY=${AETHERDUST_API_KEY:?set AETHERDUST_API_KEY (from `aetherdust bootstrap`)}
 CONTRACT=abababababababababababababababababababababababababababababababab
-REAL_TX_HEX=$(xxd -p "$(dirname "$0")/../packages/midnight/fixtures/user-sealed-unpaid-1.bin" | tr -d '\n')
+# python3 rather than xxd: it is already required below and is present on more machines
+REAL_TX_HEX=$(python3 -c 'import sys;print(open(sys.argv[1],"rb").read().hex())' "$(dirname "$0")/../packages/midnight/fixtures/user-sealed-unpaid-1.bin")
 j() { python3 -c 'import sys,json;d=json.load(sys.stdin);print(json.dumps(d,indent=1)[:900])'; }
 post() { curl -s -w '\nHTTP %{http_code}\n' -X POST "$URL/v1/sponsorship/requests${2:-}" -H "Authorization: Bearer $KEY" -H 'content-type: application/json' -d "$1" | cut -c1-600; }
 mock() { printf '{"request_id":"%s","user_id":"%s","transaction":{"format":"mock","id":"%s","calls":[{"address":"%s","entryPoint":"%s"}]}}' "$1" "$2" "$1" "$CONTRACT" "${3:-claim}"; }

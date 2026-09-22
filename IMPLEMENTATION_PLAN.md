@@ -1,6 +1,6 @@
 # AetherDust — MVP Implementation Plan
 
-**Status:** v1.6 (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; Phase 3 — §0.4; **Phase 4 complete (dashboard + observability)** — §0.5) · **Date:** 2026-09-22 · **Source spec:** `prd.md` v1.0
+**Status:** v1.7 (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; Phase 3 — §0.4; Phase 4 — §0.5; **Phase 5 in progress (hardening; docs, security, load, pins done — release pending)** — §0.6) · **Date:** 2026-09-22 · **Source spec:** `prd.md` v1.0
 **Scope of this document:** architecture + phased build plan. No implementation code.
 
 ---
@@ -93,7 +93,7 @@ apart); (i) the registration fee is paid from the UTXO's *projected* DUST and is
 (rolldown's signal-exit hook) — the global teardown now pins the exit code. **CI green on GitHub 2026-09-21: `test`, `docker`, and the on-demand `e2e` job (full `local-midnight` deployment,
 in-process + deployed suites).** Deferred to Phase 3/5: dashboard wallet page, `preprod` recorded run.
 
-### 0.4 Phase 3 outcome (2026-09-21, V7 pending)
+### 0.4 Phase 3 outcome (2026-09-21; V7 answered and signed off 2026-09-22)
 
 Delivered: `@aetherdust/client` (`packages/client`, browser + Node, fetch-only) — `createAetherDustClient` (`sponsor()`
 = POST + long-poll + GET polling until terminal, `until:'approved'` fast path, `getRequest`, `waitForOutcome`, `usage`),
@@ -166,6 +166,50 @@ Deviations from §4: plain CSS with design tokens instead of Tailwind (the palet
 there is no utility-class build step), a 40-line hash router instead of a routing library, and no TanStack Table
 (the tables are plain `<table>`s with server-side filters). Known cost: the bundle is 651 kB (192 kB gzipped),
 almost all React + Recharts — code-splitting is a Phase 5 nicety.
+
+### 0.6 Phase 5 progress (2026-09-22) — everything but the release
+
+**Verification sweep (the whole matrix, against the Phase 4 code).** In-process e2e on a local `undeployed` chain:
+11 passed / 1 skipped (AC1–AC11, SDK, in-process kill-and-restart, reconciler, `SPONSOR_BALANCE_LOW`).
+**Deployed-mode e2e** (`pnpm test:e2e:deployed`, compose containers, worker SIGKILLed mid-sponsorship): 9 passed /
+3 skipped — between them every e2e test has now run green on this code. The `register-dust` onboarding suite
+(fund → register → first DUST → estimates) passed. **AC12** was re-proven on a clean Docker project: `compose up`,
+dashboard on :8090 including its api proxy, `cli bootstrap`, `scripts/demo.sh` through all its rejection paths,
+`/metrics` 401 without a token and 113 series with one. That whole quickstart is now a CI job rather than a memory.
+Compose isolation note: the e2e and AC12 runs used their own `-p` project names so the live preprod worker on the
+same machine was never reconciled — it was mid-re-sync throughout and stayed untouched.
+
+**Docs** (`docs/`): quickstart (mock → local → preprod, with the costs of each), integration guide (SDK and raw
+REST, every error code and what a DApp should do with it, idempotency, where the API key may live), policy
+reference (every field, the rules in evaluation order, budget semantics), runbooks (fund, register DUST, balance
+low, DUST-coin throughput, stuck requests, worker restart and the re-sync cost, the zero-fee hang, key/secret/seed
+rotation, database, capacity, upgrades), observability (both metric sets, alert expressions, log fields) and the
+threat model (assets, actors, boundaries, attacks considered, residual risks, deployment checklist).
+
+**Security pass (§18).** Controls verified in code: `timingSafeEqual` on every token comparison, scrypt for API
+keys, pino redaction, no secret on any log path, `sessionStorage` (not `localStorage`) for the admin token.
+`pnpm audit` found three advisories, all in `@fastify/static` pulled in by the Swagger UI — fixed by moving to
+`@fastify/swagger-ui@6` (static 10.1.4); `/docs` and `/openapi.json` re-verified afterwards. One low advisory
+remains: `elliptic`, **no patched release**, reachable only through `vite-plugin-node-polyfills` in the example
+DApp's build tooling — not in the api or worker runtime. `pnpm audit --audit-level high` now runs in CI.
+
+**Version pins.** `ledger-v8` was pinned at 8.1.0 while §18 itself demands 8.1.2 as a security minimum — bumped
+(overrides + all four package.json pins) and validated: 104 unit/integration plus the **full e2e on a real chain,
+12 passed / 1 skipped**. `onchain-runtime-v3` stays at 3.0.0 deliberately (the duplicate-WASM `instanceof` trap;
+3.1.1 is untested against compact-runtime 0.16.0). `ledger-v9` is still `1.0.0-rc.3`, so v8 remains right for the
+MVP; revisit at its GA together with the node/indexer/proof-server support matrix.
+
+**Light load test** (`scripts/loadtest.mjs`, against a containerised mock deployment): 300 requests at 30 in
+flight → **104 req/s admitted** (p50 279 ms, p95 294 ms), all 300 settled in 10.9 s (**27 sponsorships/s**), and
+the books balanced exactly — settled DUST equal to the sum of what each confirmed request was charged, nothing
+left reserved, dashboard and `/v1/usage` in agreement. Admission is bound by scrypt on libuv's threadpool
+(raise `UV_THREADPOOL_SIZE` or add api containers); sponsorship is bound by DUST coins.
+
+**Also:** the upstream write-up for the `wallet-sdk-dust-wallet` zero-fee hang is drafted in
+`docs/upstream-issue-dust-wallet-zero-fee.md`, ready to file.
+
+**Left for the release:** the recorded **preprod** run through the dashboard with the existing sponsor wallet (its
+worker was re-syncing while this was written — no fresh seed, by decision), and the `v0.1.0` tag.
 
 ## 1. Midnight research findings
 
@@ -601,7 +645,7 @@ Deliverable: `spikes/sponsor-spike/` script + `SPIKE_REPORT.md`.
 - Admin endpoints, dashboard pages (overview, requests, policy editor, usage, api keys), Prometheus `/metrics` (PRD §25), structured logs with `request_id/transaction_id/application_id`, wallet snapshots.
 - **Testable:** AC11 (usage matches Postgres and on-chain fees), Playwright smoke.
 
-### Phase 5 — Hardening & self-host release · ~1 week
+### Phase 5 — Hardening & self-host release · ~1 week — **docs, security, load and pins done (§0.6); release pending**
 - Docs: quickstart (mock → local → preprod), integration guide, policy reference, runbooks (fund wallet, register DUST, low balance, stuck requests, key rotation), threat model.
 - Security pass (§18 checklist), light load test, fresh-machine docker test in CI, version pin review (ledger v9 status), tagged `v0.1.0`.
 - **Testable:** AC12; full AC matrix green on `undeployed` and a recorded preprod run.

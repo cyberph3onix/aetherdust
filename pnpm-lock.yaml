@@ -106,7 +106,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@midnight-ntwrk/ledger-v8': 8.1.0
+  '@midnight-ntwrk/ledger-v8': 8.1.2
   '@midnight-ntwrk/onchain-runtime-v3': 3.0.0
 
 importers:
@@ -141,8 +141,8 @@ importers:
         specifier: 0.16.0
         version: 0.16.0
       '@midnight-ntwrk/ledger-v8':
-        specifier: 8.1.0
-        version: 8.1.0
+        specifier: 8.1.2
+        version: 8.1.2
       '@midnight-ntwrk/midnight-js':
         specifier: 4.1.1
         version: 4.1.1
@@ -216,8 +216,8 @@ importers:
         specifier: ^9.5.0
         version: 9.8.1
       '@fastify/swagger-ui':
-        specifier: ^5.2.0
-        version: 5.2.6
+        specifier: ^6.1.1
+        version: 6.1.1
       fastify:
         specifier: ^5.4.0
         version: 5.12.5
@@ -327,8 +327,8 @@ importers:
         specifier: 4.0.1
         version: 4.0.1
       '@midnight-ntwrk/ledger-v8':
-        specifier: 8.1.0
-        version: 8.1.0
+        specifier: 8.1.2
+        version: 8.1.2
       '@midnight-ntwrk/midnight-js':
         specifier: 4.1.1
         version: 4.1.1
@@ -394,8 +394,8 @@ importers:
         specifier: 4.0.1
         version: 4.0.1
       '@midnight-ntwrk/ledger-v8':
-        specifier: 8.1.0
-        version: 8.1.0
+        specifier: 8.1.2
+        version: 8.1.2
       '@midnight-ntwrk/midnight-js':
         specifier: 4.1.1
         version: 4.1.1
@@ -443,8 +443,8 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@midnight-ntwrk/ledger-v8':
-        specifier: 8.1.0
-        version: 8.1.0
+        specifier: 8.1.2
+        version: 8.1.2
       '@midnight-ntwrk/midnight-js':
         specifier: 4.1.1
         version: 4.1.1
@@ -834,11 +834,11 @@ packages:
   '@fastify/send@4.1.1':
     resolution: {integrity: sha512-BYo+EiaKwlxH+WetGk6hAs1d39iP0y1gqB8lGF/qwkJ9ZZ/cBY1vx5NvExb9Sc3yRMFjD5X4Eyh4e4+TzRkzdw==}
 
-  '@fastify/static@9.3.0':
-    resolution: {integrity: sha512-9YMYRpCOtMBrqKYWcqiw7ykOrn4D0jogHpJrFS0KGeSuOwzKMM5/mjj7B0CFLVoQ6htqKYw//Zs7APn9DBq05w==}
+  '@fastify/static@10.1.4':
+    resolution: {integrity: sha512-YWYmXV0c3t/3DDyV32kRXJTgTY16FOkqtQ4mmBjbkWeukGR5n+Sr+7ppknNpS7hiRPrLU9zcySZZ1nLJVHTZkg==}
 
-  '@fastify/swagger-ui@5.2.6':
-    resolution: {integrity: sha512-OMnms0O5s9wb6wis/K5nlrAMLsgUbr1GA8uphM41IasWe3AFdgxz6r/3bA9HTxlDNUYc2FGGKeqMp3ntxmSiNA==}
+  '@fastify/swagger-ui@6.1.1':
+    resolution: {integrity: sha512-RKCLSHASlzS2JZvHWn14NmEpHyl0yNosGvqzhUumm/LGPG6RWQBf4oscTFt83QDvc5O5Tol3Beup8inAl/k4EA==}
 
   '@fastify/swagger@9.8.1':
     resolution: {integrity: sha512-VpHMnqZTY8iBZYJE8WWkbKPrXIYWy2rDfIf5qLr6DzZSpQYZ+KxQVcJFiq/AMlvNwI4gCBd66++iUlxXXGT0IQ==}
@@ -877,8 +877,8 @@ packages:
   '@midnight-ntwrk/dapp-connector-api@4.0.1':
     resolution: {integrity: sha512-IstRo8xfmlJlGgUcAJeRzPUmGCp0/xZR3/bfTOk33MHrzbGmB79r/zYziGavcclo1pkkoBHAodX4vz3xgFxczw==}
 
-  '@midnight-ntwrk/ledger-v8@8.1.0':
-    resolution: {integrity: sha512-rwOVP5kBwACpYmmY6+oLeaiM3e5gHscRMjbZUOntOC5QdtqLdpeep6eQW1OngI+sxjjdVoGg2eE16sLf+DAHmQ==}
+  '@midnight-ntwrk/ledger-v8@8.1.2':
+    resolution: {integrity: sha512-H8r5J892bltVtplh1bq947SH/+/jWx07/PaIGSQG8Bd21bObN+sR5eMVTb/RRIRlf2g7MJB4jzgbikMnVZnHqA==}
 
   '@midnight-ntwrk/midnight-js-contracts@4.1.1':
     resolution: {integrity: sha512-vHeKyaj9RXTx+Cep3YpIRgg2EWkzibO4gxI7k/rYpXmGXc3waetrR5sb9FPR7v9SUX00/zf/sYbLp1NZhwZbjg==}
@@ -949,7 +949,7 @@ packages:
   '@midnightntwrk/wallet-sdk-node-client@1.1.3':
     resolution: {integrity: sha512-ijf3EjDyuBxla2zl3yp/4CD5hsg10M61K8n033lRi7aC7kvUarbrIxUJQz4dgJQ0J73rGRDLyJi1D0II++FmVg==}
     peerDependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnightntwrk/wallet-sdk-prover-client': ^1.2.3
     peerDependenciesMeta:
       '@midnight-ntwrk/ledger-v8':
@@ -1663,9 +1663,9 @@ packages:
   constants-browserify@1.0.0:
     resolution: {integrity: sha512-xFxOwqIzR/e1k1gLiWEophSCMqXcwVHIH7akf7b/vxcUeGunlj3hvZaaqxwHsTgn+IndtkQJgSztIDWeumWJDQ==}
 
-  content-disposition@1.1.0:
-    resolution: {integrity: sha512-5jRCH9Z/+DRP7rkvY83B+yGIGX96OYdJmzngqnw2SBSxqCFPd0w2km3s5iawpGX8krnwSGmF0FW5Nhr0Hfai3g==}
-    engines: {node: '>=18'}
+  content-disposition@3.0.0:
+    resolution: {integrity: sha512-ZH/0Xs9rMIFWCOmGdmS9eHBTF62qqQYNz4nVjQhkdIO/a0fCP4UIM3mRz/wiqL0L14YgAz/1xio4OaSY4+ON/A==}
+    engines: {node: '>=22'}
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -1893,9 +1893,6 @@ packages:
 
   fast-uri@4.2.1:
     resolution: {integrity: sha512-TmHQgewjHtMq1E5QKA0tOE0yeYGQs25KZC/ziJpubRtWI15W92e6vPFydWOeZBVROSHBYw/QhD9d5OefdD6LDg==}
-
-  fastify-plugin@5.1.0:
-    resolution: {integrity: sha512-FAIDA8eovSt5qcDgcBvDuX/v0Cjz0ohGhENZ/wpc3y+oZCY2afZ9Baqql3g/lC+OHRnciQol4ww7tuthOb9idw==}
 
   fastify-plugin@6.0.0:
     resolution: {integrity: sha512-fZOty7z3O7vOliF6d8bHE3wiEh1KcNnKEQensSgTk9C1DvN6nRLS++XVd86v33Hw/8u9Un8A1zDrQ8ujcQDHEg==}
@@ -3303,19 +3300,20 @@ snapshots:
       http-errors: 2.0.1
       mime: 3.0.0
 
-  '@fastify/static@9.3.0':
+  '@fastify/static@10.1.4':
     dependencies:
       '@fastify/accept-negotiator': 2.1.0
+      '@fastify/error': 4.2.0
       '@fastify/send': 4.1.1
-      content-disposition: 1.1.0
+      content-disposition: 3.0.0
       fastify-plugin: 6.0.0
       fastq: 1.20.3
       glob: 13.0.6
 
-  '@fastify/swagger-ui@5.2.6':
+  '@fastify/swagger-ui@6.1.1':
     dependencies:
-      '@fastify/static': 9.3.0
-      fastify-plugin: 5.1.0
+      '@fastify/static': 10.1.4
+      fastify-plugin: 6.0.0
       openapi-types: 12.1.3
       rfdc: 1.4.1
       yaml: 2.9.1
@@ -3359,7 +3357,7 @@ snapshots:
     dependencies:
       '@effect/platform': 0.95.0(effect@3.22.2)
       '@midnight-ntwrk/compact-runtime': 0.16.0
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnight-ntwrk/platform-js': 2.2.4
       effect: 3.22.2
       tslib: 2.8.1
@@ -3372,7 +3370,7 @@ snapshots:
 
   '@midnight-ntwrk/dapp-connector-api@4.0.1': {}
 
-  '@midnight-ntwrk/ledger-v8@8.1.0': {}
+  '@midnight-ntwrk/ledger-v8@8.1.2': {}
 
   '@midnight-ntwrk/midnight-js-contracts@4.1.1':
     dependencies:
@@ -3449,7 +3447,7 @@ snapshots:
     dependencies:
       '@midnight-ntwrk/compact-js': 2.5.1
       '@midnight-ntwrk/compact-runtime': 0.16.0
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnight-ntwrk/onchain-runtime-v3': 3.0.0
       '@midnight-ntwrk/platform-js': 2.2.4
 
@@ -3484,7 +3482,7 @@ snapshots:
 
   '@midnight-ntwrk/wallet-sdk-address-format@3.1.2':
     dependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@scure/base': 2.4.0
       '@subsquid/scale-codec': 4.0.1
 
@@ -3496,17 +3494,17 @@ snapshots:
 
   '@midnightntwrk/wallet-sdk-address-format@3.1.2':
     dependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@scure/base': 2.4.0
       '@subsquid/scale-codec': 4.0.1
 
   '@midnightntwrk/wallet-sdk-capabilities@3.3.1(ws@8.21.3)':
     dependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnight-ntwrk/zkir-v2': 2.1.1
       '@midnightntwrk/wallet-sdk-abstractions': 2.1.0
       '@midnightntwrk/wallet-sdk-indexer-client': 1.2.3(ws@8.21.3)
-      '@midnightntwrk/wallet-sdk-node-client': 1.1.3(@midnight-ntwrk/ledger-v8@8.1.0)(@midnightntwrk/wallet-sdk-prover-client@1.2.3)
+      '@midnightntwrk/wallet-sdk-node-client': 1.1.3(@midnight-ntwrk/ledger-v8@8.1.2)(@midnightntwrk/wallet-sdk-prover-client@1.2.3)
       '@midnightntwrk/wallet-sdk-prover-client': 1.2.3
       '@midnightntwrk/wallet-sdk-utilities': 1.2.1
       effect: 3.22.2
@@ -3521,7 +3519,7 @@ snapshots:
 
   '@midnightntwrk/wallet-sdk-dust-wallet@4.2.0(ws@8.21.3)':
     dependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnightntwrk/wallet-sdk-abstractions': 2.1.0
       '@midnightntwrk/wallet-sdk-address-format': 3.1.2
       '@midnightntwrk/wallet-sdk-capabilities': 3.3.1(ws@8.21.3)
@@ -3540,7 +3538,7 @@ snapshots:
 
   '@midnightntwrk/wallet-sdk-facade@4.1.0(ws@8.21.3)':
     dependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnightntwrk/wallet-sdk-abstractions': 2.1.0
       '@midnightntwrk/wallet-sdk-address-format': 3.1.2
       '@midnightntwrk/wallet-sdk-capabilities': 3.3.1(ws@8.21.3)
@@ -3575,7 +3573,7 @@ snapshots:
       - crossws
       - ws
 
-  '@midnightntwrk/wallet-sdk-node-client@1.1.3(@midnight-ntwrk/ledger-v8@8.1.0)(@midnightntwrk/wallet-sdk-prover-client@1.2.3)':
+  '@midnightntwrk/wallet-sdk-node-client@1.1.3(@midnight-ntwrk/ledger-v8@8.1.2)(@midnightntwrk/wallet-sdk-prover-client@1.2.3)':
     dependencies:
       '@midnightntwrk/wallet-sdk-abstractions': 2.1.0
       '@midnightntwrk/wallet-sdk-utilities': 1.2.1
@@ -3586,7 +3584,7 @@ snapshots:
       bn.js: 5.2.5
       effect: 3.22.2
     optionalDependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnightntwrk/wallet-sdk-prover-client': 1.2.3
     transitivePeerDependencies:
       - bufferutil
@@ -3596,7 +3594,7 @@ snapshots:
   '@midnightntwrk/wallet-sdk-prover-client@1.2.3':
     dependencies:
       '@effect/platform': 0.96.3(effect@3.22.2)
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnight-ntwrk/zkir-v2': 2.1.1
       '@midnightntwrk/wallet-sdk-utilities': 1.2.1
       effect: 3.22.2
@@ -3611,7 +3609,7 @@ snapshots:
 
   '@midnightntwrk/wallet-sdk-shielded@3.0.2(ws@8.21.3)':
     dependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnightntwrk/wallet-sdk-abstractions': 2.1.0
       '@midnightntwrk/wallet-sdk-address-format': 3.1.2
       '@midnightntwrk/wallet-sdk-capabilities': 3.3.1(ws@8.21.3)
@@ -3630,7 +3628,7 @@ snapshots:
 
   '@midnightntwrk/wallet-sdk-unshielded-wallet@3.1.0(ws@8.21.3)':
     dependencies:
-      '@midnight-ntwrk/ledger-v8': 8.1.0
+      '@midnight-ntwrk/ledger-v8': 8.1.2
       '@midnightntwrk/wallet-sdk-abstractions': 2.1.0
       '@midnightntwrk/wallet-sdk-address-format': 3.1.2
       '@midnightntwrk/wallet-sdk-capabilities': 3.3.1(ws@8.21.3)
@@ -4489,7 +4487,7 @@ snapshots:
 
   constants-browserify@1.0.0: {}
 
-  content-disposition@1.1.0: {}
+  content-disposition@3.0.0: {}
 
   convert-source-map@2.0.0: {}
 
@@ -4758,8 +4756,6 @@ snapshots:
   fast-uri@3.1.8: {}
 
   fast-uri@4.2.1: {}
-
-  fastify-plugin@5.1.0: {}
 
   fastify-plugin@6.0.0: {}
 

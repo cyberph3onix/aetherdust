@@ -11,5 +11,5 @@ allowBuilds:
   msgpackr-extract: true
   "@swc/core": true
 overrides:
-  "@midnight-ntwrk/ledger-v8": "8.1.0"
+  "@midnight-ntwrk/ledger-v8": "8.1.2"
   "@midnight-ntwrk/onchain-runtime-v3": "3.0.0"

@@ -27,7 +27,7 @@
   "dependencies": {
     "@aetherdust/config": "workspace:*",
     "@aetherdust/core": "workspace:*",
-    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/ledger-v8": "8.1.2",
     "@midnight-ntwrk/midnight-js": "4.1.1",
     "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
     "@midnightntwrk/wallet-sdk-abstractions": "2.1.0",
