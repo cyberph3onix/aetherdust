@@ -223,8 +223,29 @@ including the audit gate, the dashboard smoke job and the AC12 quickstart job.
 **Also:** the upstream write-up for the `wallet-sdk-dust-wallet` zero-fee hang is drafted in
 `docs/upstream-issue-dust-wallet-zero-fee.md`, ready to file.
 
-**Left for the release:** the recorded **preprod** run through the dashboard with the existing sponsor wallet (its
-worker was re-syncing while this was written — no fresh seed, by decision), and the `v0.1.0` tag.
+**Recorded preprod run (2026-09-22/23).** Captured from the live deployment with the existing sponsor wallet (no
+fresh seed, by decision), through the Phase 4 dashboard and `scripts/record-run.sh`:
+
+| | |
+|---|---|
+| Network / adapter | `preprod` · `midnight` |
+| Counter contract | `e244010266d63c97dd9aac01231281cb75eaa2a211e68ba9964533ddc2c22c56` |
+| Sponsored call | `increment`, user `demo-user-1` from **Lace holding 0 NIGHT / 0 DUST** |
+| Transaction id | `003b27dc98e98615ee63718d9f7a741cb9c734ceac75f683f194f87896f334471e` (block 2657441) |
+| Sponsor paid | 0.000001000000001 DUST — estimate and actual identical |
+| Audit trail | RECEIVED → RESERVED → SPONSORING → SUBMITTED → CONFIRMED, 12:53:52 → 12:54:23 |
+| Sponsor wallet | 5,576.09 DUST · 5,000 NIGHT · 1 DUST coin |
+| Confirmation p95 | 29.7 s over the window |
+
+Evidence in the repository: `docs/images/dashboard-overview-preprod.png` (operator overview against preprod),
+`dashboard-request-audit-trail-preprod.png` (the request's full audit trail with the on-chain identifier) and
+`dashboard-wallet-preprod.png`; `image.png` is the end-user side (the DApp with Lace, 0 NIGHT / 0 DUST). Two
+`SPONSOR_UNAVAILABLE` rejections also appear in the window — attempts made while the worker was resyncing, which is
+exactly the behaviour the floor is meant to produce, and they are left in rather than cleaned up.
+`scripts/record-run.sh` regenerates the whole bundle (health, wallet, overview, `/metrics`, the request's audit
+trail) and `scripts/dashboard-shots.mjs` retakes the screenshots.
+
+**Left for the release:** the `v0.1.0` tag.
 
 ## 1. Midnight research findings
 
