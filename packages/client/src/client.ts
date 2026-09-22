@@ -69,7 +69,8 @@ const sleep = (ms: number, signal?: AbortSignal) => new Promise<void>((res, rej)
 });
 
 export const createAetherDustClient = (o: AetherDustClientOptions): AetherDustClient => {
-  const f = o.fetch ?? globalThis.fetch;
+  // browsers throw "Illegal invocation" if window.fetch is called detached from window
+  const f = o.fetch ?? (globalThis.fetch ? globalThis.fetch.bind(globalThis) : undefined);
   if (!f) throw new Error('no fetch available: pass `fetch` in the options');
   const base = o.baseUrl.replace(/\/+$/, '');
   const waitMs = o.waitMs ?? 15_000;

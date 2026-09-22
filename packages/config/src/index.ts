@@ -37,9 +37,13 @@ export const ConfigSchema = z.object({
   AETHERDUST_SPONSOR_SEED_FILE: z.string().optional(),
   AETHERDUST_SPONSOR_TTL_MIN: int(30).describe('TTL of the sponsor’s balancing intent (the merged tx expires at the minimum of user/sponsor TTLs)'),
   AETHERDUST_SUBMIT_WAIT: z.enum(['Submitted', 'InBlock', 'Finalized']).default('Finalized').describe('how long submit blocks: Finalized = facade path with pending-spend tracking (Phase 0 proven)'),
-  AETHERDUST_DUST_FEE_OVERHEAD_SPECKS: z.string().regex(/^\d+$/).default('0').describe('costParameters.additionalFeeOverhead — keep ≈0 (the SDK example’s 0.3 DUST overpays ~80×)'),
+  AETHERDUST_DUST_FEE_OVERHEAD_SPECKS: z.string().regex(/^\d+$/).default('1000000000').describe(
+    'costParameters.additionalFeeOverhead in SPECK, added to every sponsored fee. Default 1e9 = 0.000001 DUST. MUST be > 0: with 0, '
+    + 'wallet-sdk-dust-wallet 4.2.0 spins forever in computeBalancingRecipe when the network fee for a tx rounds to 0 (seen on preprod 2026-09-22). '
+    + 'The SDK example’s 0.3 DUST is ~80× too much.'),
   AETHERDUST_DUST_FEE_BLOCKS_MARGIN: int(5),
   AETHERDUST_WALLET_SYNC_TIMEOUT_S: int(900),
+  AETHERDUST_EVENT_LOOP_WATCHDOG_S: int(120).describe('kill the worker if its event loop is blocked longer than this (0 disables); a supervisor restarts it'),
   AETHERDUST_RECONCILE_INTERVAL_S: int(30).describe('how often TIMEOUT/UNKNOWN requests are re-checked against the indexer'),
   AETHERDUST_CONFIRM_GRACE_S: int(3 * 3600).describe('after the user TTL + this, an unconfirmed submission is declared EXPIRED (DUST grace period is 3 h)'),
   // api ↔ worker private RPC (estimate + health). Only used when AETHERDUST_SPONSOR_ADAPTER=midnight.
@@ -61,6 +65,14 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): Config => {
 
 /** Resolved Midnight endpoints: explicit env wins, else the well-known URL for the network. */
 export interface MidnightEndpoints { network: MidnightNetwork; node: string; indexer: string; indexerWs: string; proofServer: string }
+/** Guards against configurations known to hang the wallet SDK; returns human-readable warnings. */
+export const configWarnings = (c: Config): string[] => {
+  const w: string[] = [];
+  if (c.AETHERDUST_SPONSOR_ADAPTER === 'midnight' && BigInt(c.AETHERDUST_DUST_FEE_OVERHEAD_SPECKS) === 0n)
+    w.push('AETHERDUST_DUST_FEE_OVERHEAD_SPECKS=0 can hang fee estimation/balancing forever when the network fee rounds to 0 (wallet-sdk-dust-wallet 4.2.0); use ≥ 1000000000');
+  return w;
+};
+
 export const midnightEndpoints = (c: Config): MidnightEndpoints => {
   const n = c.MIDNIGHT_NETWORK;
   const def = n === 'undeployed'

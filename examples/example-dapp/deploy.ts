@@ -25,8 +25,14 @@ const ep = midnightEndpoints(config);
 // the proof server: from env, or the host-published one of the compose stack
 const proofServer = process.env.MIDNIGHT_PROOF_SERVER_URL?.startsWith('http://proof-server') ? 'http://127.0.0.1:6300' : ep.proofServer;
 
-console.error(`deploying the counter on ${ep.network} with the sponsor wallet (proof server ${proofServer})…`);
-const w = await buildSponsorWallet(loadSponsorSeed(config, (p) => readFileSync(p, 'utf8')), { ...ep, proofServer, feeOverheadSpecks: 0n, feeBlocksMargin: 5 });
+// fail fast: the wallet sync below takes ~2 h on a public testnet, so check the proof server BEFORE it, not after
+const version = await fetch(new URL('/version', proofServer), { signal: AbortSignal.timeout(5000) }).then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`)))).catch((e) => {
+  console.error(`proof server not reachable at ${proofServer} (${(e as Error).message}).`);
+  console.error(`With docker compose, publish it for this deploy: docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml --profile testnet up -d proof-server`);
+  process.exit(2);
+});
+console.error(`deploying the counter on ${ep.network} with the sponsor wallet (proof server ${proofServer}, v${version})…`);
+const w = await buildSponsorWallet(loadSponsorSeed(config, (p) => readFileSync(p, 'utf8')), { ...ep, proofServer, feeOverheadSpecks: BigInt(config.AETHERDUST_DUST_FEE_OVERHEAD_SPECKS), feeBlocksMargin: config.AETHERDUST_DUST_FEE_BLOCKS_MARGIN });
 await waitForSync(w, config.AETHERDUST_WALLET_SYNC_TIMEOUT_S * 1000, (line) => console.error(`  sync: ${line}`));
 const s = await Rx.firstValueFrom(w.facade.state());
 const keys = { coin: s.shielded.coinPublicKey.toHexString(), enc: s.shielded.encryptionPublicKey.toHexString() };

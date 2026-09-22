@@ -19,7 +19,9 @@ import { Counter } from '../contract/index.js';
 // ---------- tiny UI helpers ----------
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const logEl = $('log');
-const log = (msg: string, cls = '') => { const line = document.createElement('div'); line.className = cls; line.textContent = `${new Date().toISOString().slice(11, 19)}  ${msg}`; logEl.prepend(line); };
+const log = (msg: string, cls = '') => { const line = document.createElement('div'); line.className = cls; line.textContent = `${new Date().toISOString().slice(11, 19)}  ${msg}`; logEl.prepend(line); (cls === 'bad' ? console.error : console.log)(`[aetherdust] ${msg}`); };
+window.addEventListener('error', (e) => log(`page error: ${e.message}`, 'bad'));
+window.addEventListener('unhandledrejection', (e) => log(`unhandled: ${(e.reason as Error)?.message ?? e.reason}`, 'bad'));
 const field = (id: string, key: string, def = '') => {
   const el = $<HTMLInputElement>(id);
   el.value = localStorage.getItem(`aetherdust.${key}`) ?? def;
@@ -31,6 +33,7 @@ const baseUrl = field('baseUrl', 'baseUrl', 'http://localhost:8080');
 const apiKey = field('apiKey', 'apiKey');
 const userId = field('userId', 'userId', 'demo-user-1');
 const contractAddress = field('contract', 'contract');
+const proofServerField = field('proofServer', 'proofServer', 'http://localhost:6300');
 
 // ---------- wallet ----------
 let connected: ConnectedAPI | undefined;
@@ -100,7 +103,9 @@ const providers = async () => {
     return sealed;
   };
   const zk = new FetchZkConfigProvider<'increment'>(new URL('/counter', location.origin).toString());
-  const proofUrl = config.proverServerUri || localStorage.getItem('aetherdust.proofServer') || 'http://localhost:6300';
+  // the wallet-reported public proof server typically lacks CORS headers for browser pages; prefer an explicit one
+  const proofUrl = proofServerField() || config.proverServerUri || 'http://localhost:6300';
+  log(`proving on ${proofUrl}`);
   const keys = sponsored.keys;
   return {
     privateStateProvider: levelPrivateStateProvider<'counterPrivateState'>({ privateStateStoreName: 'aetherdust-counter', accountId: keys.coinPublicKey, privateStoragePasswordProvider: () => `${keys.coinPublicKey}!` }),

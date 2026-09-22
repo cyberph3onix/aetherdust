@@ -139,7 +139,7 @@ describe.skipIf(!E2E)(`e2e: sponsored contract calls on undeployed (${EXTERNAL ?
         if (Date.now() > deadline) throw new Error(`deployed worker never reported a synced wallet: ${JSON.stringify(w)}`);
         await new Promise((r) => setTimeout(r, 5000));
       }
-      deployer = await buildSponsorWallet(GENESIS_SEED, { ...ep, feeOverheadSpecks: 0n, feeBlocksMargin: 5 });
+      deployer = await buildSponsorWallet(GENESIS_SEED, { ...ep, feeOverheadSpecks: 1_000_000_000n, feeBlocksMargin: 5 }); // a funded wallet paying dust: never 0 overhead (SDK hang when fee → 0)
       await waitForSync(deployer, 600_000);
       deployWallet = deployer;
     }

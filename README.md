@@ -8,11 +8,12 @@ User (Lace, payFees:false) ─signed tx─▶ DApp ─POST /v1/sponsorship/reque
                                                                                  auth · rate limit · inspect · policy · fee · budget          balance DUST · prove · merge · submit · confirm
 ```
 
-Status: **Phase 2 complete** — the control plane runs against a real sponsor wallet (`AETHERDUST_SPONSOR_ADAPTER=midnight`)
-and the end-to-end suite proves a 0-NIGHT / 0-DUST user getting a contract call sponsored and confirmed on a local
-`undeployed` network, including kill-and-restart recovery. The mock sponsor remains for development. Phase 3 adds the
-browser client SDK + example DApp (Lace). Plan: [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md); the flow was first
-proven in [`spikes/sponsor-spike/SPIKE_REPORT.md`](spikes/sponsor-spike/SPIKE_REPORT.md).
+Status: **Phase 3 complete** — a Lace wallet holding 0 NIGHT / 0 DUST had a contract call sponsored and confirmed on
+**preprod** through the example DApp (`@aetherdust/client` + `createSponsoredMidnightProvider`, Lace honouring
+`payFees:false`). The control plane, the real sponsor worker and the e2e suite on a local `undeployed` chain were proven
+in Phases 1–2; the mock sponsor remains for development. Next: dashboard + observability (Phase 4), hardening + release
+(Phase 5). Plan: [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md); the flow was first proven in
+[`spikes/sponsor-spike/SPIKE_REPORT.md`](spikes/sponsor-spike/SPIKE_REPORT.md).
 
 ## Quickstart (Docker, mock sponsor)
 
@@ -32,7 +33,7 @@ Without Docker: `pnpm install && pnpm build`, point `AETHERDUST_DATABASE_URL` at
 
 The worker owns one sponsor wallet (seed → keys → `WalletFacade`); the api never loads wallet code and asks the worker
 for fee estimates / health over a private, shared-secret RPC (`AETHERDUST_WORKER_URL`, `AETHERDUST_INTERNAL_SECRET`).
-
+![exampledapp](image.png)
 ```bash
 # 1. local `undeployed` chain (node + indexer + private proof server), genesis-funded sponsor
 #    in deploy/.env: AETHERDUST_SPONSOR_ADAPTER=midnight, AETHERDUST_INTERNAL_SECRET=…, and the local-midnight block

@@ -17,26 +17,24 @@ await counter.callTx.increment(); // proves → Lace balances+signs (no fee) →
 You need: a running AetherDust with a funded, DUST-registered sponsor on `preprod` (`docker compose --profile testnet up -d`,
 see the root README), and Lace installed in the browser with an **unfunded** wallet on `preprod`.
 
-1. **Deploy the counter** (once; paid by the sponsor wallet, self-paying). On a public testnet the wallet sync takes ~2 h
-   the first time — run it in the background:
+1. **Deploy the counter** (once; paid by the sponsor wallet, self-paying). The script needs the proof server from the
+   host, which the `testnet` profile keeps private — publish it (the DApp needs it later too):
+   ```bash
+   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml --profile testnet up -d proof-server
+   ```
+   On a public testnet the wallet sync takes ~2 h the first time — run the deploy in the background:
    ```bash
    cd examples/example-dapp
    set -a && . ../../deploy/.env && set +a
    nohup pnpm deploy-counter > deploy.log 2>&1 &
    tail -f deploy.log          # ends with {"network":"preprod","contractAddress":"…"}
    ```
-2. **Create the DApp's application, key and policy** (admin API; `ADMIN` is `AETHERDUST_ADMIN_TOKEN` from `deploy/.env`):
+2. **Register the DApp with AetherDust** (creates the application, a policy that sponsors only `increment` on that
+   address, and one API key; uses the admin token from `deploy/.env`):
    ```bash
-   cd ../..
-   ADMIN=$(grep '^AETHERDUST_ADMIN_TOKEN=' deploy/.env | cut -d= -f2); API=http://localhost:8080; ADDR=<contractAddress>
-   APP=$(curl -s -X POST $API/v1/admin/applications -H "Authorization: Bearer $ADMIN" -H 'content-type: application/json' -d '{"name":"CounterDApp"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
-   curl -s -X PUT $API/v1/admin/applications/$APP/policy -H "Authorization: Bearer $ADMIN" -H 'content-type: application/json' -d "{
-     \"contracts\": {\"$ADDR\": [\"increment\"]},
-     \"limits\": {\"period\":\"daily\",\"global_budget_dust\":\"50\",\"per_user_budget_dust\":\"5\",\"max_fee_per_tx_dust\":\"1\"},
-     \"rate_limit\": {\"requests_per_minute_per_credential\":60,\"requests_per_minute_per_user\":10,\"requests_per_minute_per_ip\":120}}"
-   curl -s -X POST $API/v1/admin/applications/$APP/api-keys -H "Authorization: Bearer $ADMIN" -H 'content-type: application/json' -d '{"env":"live","label":"counter-dapp"}'
+   cd ../.. && scripts/register-dapp.sh <contractAddress>
    ```
-   The last call prints the `token` (`ad_live_…`) once — that's the DApp's API key.
+   It prints the API key once — copy it.
 3. **Run the DApp**: `cd examples/example-dapp && pnpm dev` → http://localhost:5173. In Brave, turn Shields **off** for
    the page (lion icon). Fill in network `preprod`, API base URL `http://localhost:8080`, the API key, a user id, and the
    contract address (they're remembered in localStorage).
@@ -49,9 +47,10 @@ see the root README), and Lace installed in the browser with an **unfunded** wal
      path (`test/e2e` "SDK" test, same provider code over a wallet-SDK shim) is the fallback demo until Lace ships it.
    - `AetherDust refused: CONTRACT_NOT_ALLOWED / ENTRY_POINT_NOT_ALLOWED` → the policy from step 2 doesn't match the address.
 
-Proving happens against the proof server the wallet reports in `getConfiguration().proverServerUri`; if your Lace build
-reports none, set `localStorage.setItem('aetherdust.proofServer', 'http://localhost:6300')` in the console and point it at
-your compose proof server (publish its port for this test only: `deploy/docker-compose.e2e.yml`).
+The user's proof is generated on the proof server in the "Proof server" field (default `http://localhost:6300`, i.e. your
+compose proof server published with `deploy/docker-compose.e2e.yml`). Leave it empty to use the one the wallet reports —
+observed 2026-09-22: Lace reports `https://proof-server.preprod.midnight.network`, whose CORS preflight has no
+`Access-Control-Allow-Origin`, so browsers cannot call it directly.
 
 ## Local chain instead of preprod
 

@@ -39,7 +39,7 @@ export class MidnightSponsorAdapter implements SponsorAdapter {
   /** Operational knob: the DUST floor below which estimates are refused with SPONSOR_BALANCE_LOW. */
   setMinSponsorDustSpecks(v: bigint) { this.#minSponsorDustSpecks = v; }
 
-  get wallet(): SponsorWallet { if (!this.#w) throw new SponsorError('wallet', 'SPONSOR_UNAVAILABLE', 'sponsor wallet not started', true); return this.#w; }
+  get wallet(): SponsorWallet { if (!this.#w) throw new SponsorError('wallet', 'SPONSOR_UNAVAILABLE', 'sponsor wallet is still starting (syncing with the network); try again later', true); return this.#w; }
   get publicData(): PublicDataProvider { return (this.#pub ??= indexerPublicDataProvider(this.o.indexer, this.o.indexerWs)); }
 
   async start(): Promise<void> {

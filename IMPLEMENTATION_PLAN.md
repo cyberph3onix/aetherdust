@@ -1,6 +1,6 @@
 # AetherDust — MVP Implementation Plan
 
-**Status:** v1.4 (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; **Phase 3 built, V7 pending** — §0.4) · **Date:** 2026-09-20 · **Source spec:** `prd.md` v1.0
+**Status:** v1.5 (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; **Phase 3 complete (Lace on preprod)** — §0.4) · **Date:** 2026-09-20 · **Source spec:** `prd.md` v1.0
 **Scope of this document:** architecture + phased build plan. No implementation code.
 
 ---
@@ -108,9 +108,24 @@ observed on the wire, a policy rejection surfaces to the DApp as `ENTRY_POINT_NO
 Vite + plain TS counter DApp (Lace via `window.midnight.*`, WASM ledger/runtime, ZK assets over fetch, browser level DB),
 `deploy-counter` script (sponsor wallet, self-paying), on-page V7 diagnostic (counts `DustSpend`s in what the wallet
 returns), runbook in its README; bundles in CI.
-**Open — needs a human + Lace on preprod (V7):** does Lace honour `payFees:false`? The DApp reports it either way; if
-not, AetherDust rejects with R6 and the Node-side path above is the documented fallback demo. Wire encoding to the
-connector assumed hex (ecosystem convention; overridable via `encode`/`decode`).
+**V7 answered 2026-09-22 (Lace, connector api 4.0.1, preprod): Lace honours `payFees:false`** — the sealed transaction it
+returned carried no `DustSpend` (the DApp's on-page diagnostic; hex wire encoding confirmed). Lace reports its own
+indexer (Blockfrost) and a public proof server whose CORS preflight lacks `Access-Control-Allow-Origin`, so the DApp
+proves on a configurable proof server (default the operator's, published via `docker-compose.e2e.yml`). Browser bundling
+fixes: `cross-fetch` aliased to a bound-`fetch` shim (midnight-js providers), node polyfills, `excluded > dep`
+pre-bundling for the WASM packages' CJS deps.
+**Blocker found on the first sponsored call on preprod (SDK bug, worked around):** `wallet-sdk-dust-wallet` 4.2.0
+`computeBalancingRecipe` (used by both `estimateTransactionFee` and `balanceFinalizedTransaction`) is a synchronous
+`Effect.iterate` that never converges when the network fee for the tx rounds to **0** (preprod, empty blocks): the initial
+imbalance is 0, no coin is selected, the dry run yields 1 SPECK, `1 <= 0` never holds → the worker's event loop spins at
+300 % CPU forever (diagnosed by attaching the inspector to the live container). Workaround: `additionalFeeOverhead` > 0
+(`AETHERDUST_DUST_FEE_OVERHEAD_SPECKS` now defaults to 1e9 = 0.000001 DUST; 0 is warned against). Defence in depth:
+`apps/worker/src/watchdog.ts` — a worker thread SIGKILLs the process when the main loop stops heartbeating
+(`AETHERDUST_EVENT_LOOP_WATCHDOG_S`, default 120 s) so the supervisor restarts it. To report upstream.
+**Phase 3 signed off 2026-09-22 07:22 UTC:** after the worker re-synced with the overhead fix, a Lace wallet holding
+0 NIGHT / 0 DUST had `counter.increment` sponsored and **CONFIRMED on preprod** (tx `00b01648…`); the sponsor paid
+0.000001000000001 DUST — the network fee was exactly 1 SPECK (the zero-fee condition) plus the 1 µDUST overhead. AC1/AC2
+as an end user experiences them, with the real wallet.
 
 ## 1. Midnight research findings
 
