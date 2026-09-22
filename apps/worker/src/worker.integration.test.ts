@@ -8,7 +8,7 @@ import type { Pool } from 'pg';
 import type { FastifyInstance } from 'fastify';
 import { loadConfig } from '@aetherdust/config';
 import { dustToSpecks, periodBounds } from '@aetherdust/core';
-import { createApiKey, createApplication, findByRequestId, getBudget, insertReceived, listEvents, putPolicy, reserve, transition, withTx } from '@aetherdust/db';
+import { createApiKey, createApplication, createPool, findByRequestId, getBudget, insertReceived, listEvents, putPolicy, reserve, transition, waitForDatabase, withTx } from '@aetherdust/db';
 import { envelopeToBytes, MockSponsorAdapter, RemoteSponsorAdapter } from '@aetherdust/midnight';
 import { closeTestPool, testPool, truncateAll } from '../../../test/db.js';
 import { buildInternalServer } from './internal.js';
@@ -71,6 +71,34 @@ describe('private api → worker RPC', () => {
     await expect(remote.estimateFee(low)).rejects.toMatchObject({ code: 'SPONSOR_BALANCE_LOW', retryable: true });
     const bad = new RemoteSponsorAdapter({ network: 'undeployed', workerUrl: internalUrl, secret: 'nope', maxTxBytes: 512 * 1024 });
     await expect(bad.estimateFee(bytes)).rejects.toMatchObject({ code: 'SPONSOR_UNAVAILABLE' });
+  });
+});
+
+describe('database availability (Phase 5)', () => {
+  it('waitForDatabase returns as soon as Postgres answers, and gives up rather than hanging', async () => {
+    await waitForDatabase(pool, { attempts: 1 });                       // the real pool answers immediately
+    const dead = createPool('postgres://nobody@127.0.0.1:1/none', 1);
+    const retries: number[] = [];
+    await expect(waitForDatabase(dead, { attempts: 3, delayMs: 10, onRetry: (a) => retries.push(a) }))
+      .rejects.toThrow(/database unreachable after 3 attempts/);
+    expect(retries).toEqual([1, 2]);
+    await dead.end().catch(() => {});
+  });
+
+  it('a failing recovery pass keeps the process alive and blocks new work until it succeeds', async () => {
+    // the preprod failure mode: the wallet is synced (expensive) and Postgres blinks — losing the process costs hours
+    await reserved('db-blip');
+    const flaky = { ...deps, pool: { query: async () => { throw new Error('EAI_AGAIN postgres'); } } as any };
+    const w = new Worker(flaky);
+    await expect(w.start()).resolves.toBeUndefined();                   // no throw: the sync survives
+    expect(await w.tick()).toBe(0);                                     // and nothing is claimed
+    await w.stop();
+    expect((await status('db-blip')).status).toBe('RESERVED');          // the request is still queued for later
+
+    // once the database is back, the same worker recovers and works normally
+    const healthy = new Worker(deps);
+    await healthy.drain();
+    expect((await status('db-blip')).status).toBe('CONFIRMED');
   });
 });
 

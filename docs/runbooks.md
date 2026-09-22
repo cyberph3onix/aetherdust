@@ -118,6 +118,19 @@ the dashboard shows the wallet as *syncing* from the last snapshot.
 The watchdog (`AETHERDUST_EVENT_LOOP_WATCHDOG_S`, default 120 s) SIGKILLs the process if the event loop stops
 heartbeating, so a supervisor restarts it. If that fires repeatedly, look for the zero-fee hang below.
 
+**If the worker restarts in a loop, check its dependencies before its code.** The worker refuses to start the wallet
+sync until Postgres answers (it retries for a minute, then exits with
+`the database must be reachable before the sponsor wallet syncs`) — precisely so a missing database costs seconds
+instead of a two-hour sync. A database that disappears *after* the sync no longer kills the process either: the
+worker keeps the synced wallet, refuses to claim new work, and retries the recovery pass every round. Starting the
+worker alone (`restart: unless-stopped` after the rest of the stack is gone) is the usual way into this state — bring
+Postgres up first:
+
+```bash
+docker compose -f deploy/docker-compose.yml --profile testnet up -d postgres proof-server api dashboard
+docker compose -f deploy/docker-compose.yml logs -f worker      # "sponsor wallet syncing" → synced
+```
+
 ---
 
 ## Fees round to zero

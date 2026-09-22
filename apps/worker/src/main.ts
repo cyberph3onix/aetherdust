@@ -1,5 +1,5 @@
 import { configWarnings, loadConfig } from '@aetherdust/config';
-import { createPool, migrate } from '@aetherdust/db';
+import { createPool, migrate, waitForDatabase } from '@aetherdust/db';
 import { createSponsorAdapter } from '@aetherdust/midnight';
 import pino from 'pino';
 import { buildInternalServer, needsInternalServer } from './internal.js';
@@ -11,6 +11,10 @@ import { Worker } from './worker.js';
 const config = loadConfig();
 const log = pino({ level: config.AETHERDUST_LOG_LEVEL, redact: ['*.seed', '*.secret', '*.token'] });
 const pool = createPool(config.AETHERDUST_DATABASE_URL, 8);
+// before anything expensive: the wallet sync below takes minutes locally and hours on a public network, and the
+// worker needs Postgres the moment it finishes. Finding out afterwards costs the entire sync (seen on preprod).
+await waitForDatabase(pool, { onRetry: (attempt, err) => log.warn({ attempt, err: err.message }, 'database not reachable yet; waiting before starting the wallet sync') })
+  .catch((e) => { log.error({ err: e.message }, 'giving up: the database must be reachable before the sponsor wallet syncs'); process.exit(1); });
 if (config.AETHERDUST_AUTO_MIGRATE) await migrate(pool, (m) => log.info(m));
 for (const w of configWarnings(config)) log.warn(w);
 const watchdog = config.AETHERDUST_EVENT_LOOP_WATCHDOG_S > 0 ? startEventLoopWatchdog(config.AETHERDUST_EVENT_LOOP_WATCHDOG_S * 1000, log) : undefined;

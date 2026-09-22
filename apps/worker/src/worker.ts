@@ -9,6 +9,7 @@ import { confirmRequest, processClaimed, submitAndConfirm } from './process.js';
  */
 export class Worker {
   #running = false;
+  #recovered = false;
   #inFlight = new Set<Promise<unknown>>();
   #timer?: NodeJS.Timeout;
   #snapshotTimer?: NodeJS.Timeout;
@@ -39,6 +40,7 @@ export class Worker {
       this.#track(submitAndConfirm(this.deps, r, r.actualFeeSpecks ?? r.estimatedFeeSpecks ?? 0n).catch((e) => log.error({ err: e, requestId: r.id }, 'recovery failed')));
     }
     log.info(stats, 'recovery pass complete');
+    this.#recovered = true;
     return stats;
   }
 
@@ -88,6 +90,7 @@ export class Worker {
 
   /** One scheduling round: claim as many RESERVED requests as the concurrency budget allows. */
   async tick(): Promise<number> {
+    if (!(await this.#ensureRecovered())) return 0;
     const status = await this.deps.adapter.walletStatus();
     // `maxInFlight` = sponsorships the wallet can start *now* (free DUST coins); the worker's own bound is separate
     const capacity = Math.min(this.deps.config.AETHERDUST_WORKER_CONCURRENCY - this.#inFlight.size, status.maxInFlight);
@@ -107,9 +110,22 @@ export class Worker {
     await insertWalletSnapshot(this.deps.pool, { adapter: w.adapter, network: w.network, dustBalanceSpecks: w.dustBalanceSpecks, dustCapSpecks: w.dustCapSpecks, nightStars: w.nightStars, dustCoins: w.dustCoins, dustCoinsInFlight: w.dustCoinsInFlight, synced: w.synced, healthy: w.healthy, detail: w.detail });
   }
 
+  /**
+   * Recovery must happen before any new work is claimed (Phase 0 V5). If the database is briefly unavailable we do
+   * **not** exit — the wallet sync behind us is worth hours — we keep the process alive, refuse to claim new work,
+   * and try again every round.
+   */
+  async #ensureRecovered(): Promise<boolean> {
+    if (this.#recovered) return true;
+    try { await this.recover(); return true; } catch (e) {
+      this.deps.log.error({ err: e }, 'recovery pass failed; not claiming new work until it succeeds');
+      return false;
+    }
+  }
+
   async start(): Promise<void> {
     this.#running = true;
-    await this.recover();
+    await this.#ensureRecovered();
     await this.snapshot().catch((e) => this.deps.log.warn({ err: e }, 'snapshot failed'));
     const loop = async () => {
       if (!this.#running) return;

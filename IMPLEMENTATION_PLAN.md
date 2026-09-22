@@ -205,6 +205,21 @@ the books balanced exactly — settled DUST equal to the sum of what each confir
 left reserved, dashboard and `/v1/usage` in agreement. Admission is bound by scrypt on libuv's threadpool
 (raise `UV_THREADPOOL_SIZE` or add api containers); sponsorship is bound by DUST coins.
 
+**A hardening bug the live deployment found for us.** The preprod worker was observed crash-looping: it synced the
+wallet for **106 minutes**, then died instantly at `Worker.recover()` with `EAI_AGAIN postgres` (its Postgres was
+not running), and `restart: unless-stopped` began the whole sync again — twice over. The pool is lazy, so nothing
+touched the database until the expensive work was already done. Fixed on both sides: `waitForDatabase` (new, in
+`packages/db`) now blocks the worker's boot until Postgres answers — a minute of retries, then a clear exit —
+**before** `adapter.start()`; and a recovery pass that fails *after* the sync no longer kills the process, since
+that sync is worth hours: the worker stays up, refuses to claim new work (Phase 0 V5's ordering guarantee holds)
+and retries recovery each round. Two integration tests cover both halves.
+
+**CI.** Two failures on the first runs of the new jobs, both real: the AC12 step's name contained `: `, which made
+the whole workflow file unparseable (no job ran), and the smoke job timed out because `vite preview` binds
+`localhost`, which resolves to `::1` first on GitHub runners while Playwright polls `127.0.0.1`. Workflow YAML is
+now validated locally before pushing and the preview server is pinned to `127.0.0.1`. Full CI green afterwards,
+including the audit gate, the dashboard smoke job and the AC12 quickstart job.
+
 **Also:** the upstream write-up for the `wallet-sdk-dust-wallet` zero-fee hang is drafted in
 `docs/upstream-issue-dust-wallet-zero-fee.md`, ready to file.
 
