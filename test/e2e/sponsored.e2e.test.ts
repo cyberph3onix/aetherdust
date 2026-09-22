@@ -21,7 +21,7 @@ import type { Pool } from 'pg';
 import type { FastifyInstance } from 'fastify';
 import type * as ledger from '@midnight-ntwrk/ledger-v8';
 import { loadConfig, midnightEndpoints } from '@aetherdust/config';
-import { dustToSpecks } from '@aetherdust/core';
+import { dustToSpecks, specksToDust } from '@aetherdust/core';
 import { listEvents, transition, withTx } from '@aetherdust/db';
 import { RemoteSponsorAdapter, createSponsorAdapter, inspectFinalizedBytes, type ConfirmationResult, type SponsorAdapter } from '@aetherdust/midnight';
 import { buildSponsorWallet, waitForSync, type SponsorWallet } from '@aetherdust/midnight/wallet';
@@ -242,6 +242,52 @@ describe.skipIf(!E2E)(`e2e: sponsored contract calls on undeployed (${EXTERNAL ?
     expect([...times].sort((a, b) => a - b)).toEqual(times);
     expect(detail.sponsored_dust).toBe(final.sponsored_dust);
   }, 4 * 60_000);
+
+  it('AC11: usage, the dashboard overview and /metrics all report the DUST the chain actually charged', async () => {
+    // truth: what the sponsor paid, per confirmed request, as recorded when the chain confirmed it
+    const confirmedSoFar = async () => ((await admin('GET', `/v1/admin/applications/${appId}/requests?limit=500`)).json() as any[])
+      .filter((r) => r.internal_status === 'CONFIRMED');
+    if ((await confirmedSoFar()).length === 0) {
+      // running this test on its own (`-t AC11`): give it one real sponsorship to account for
+      const sealed = await sealIncrement();
+      expect((await post({ request_id: 'e2e-ac11', user_id: 'alice', transaction: real(sealed) }, '?wait=120000')).json().status).toBe('confirmed');
+    }
+    const confirmed = await confirmedSoFar();
+    expect(confirmed.length).toBeGreaterThan(0);
+    const onChainDust = confirmed.reduce((a, r) => a + dustToSpecks(r.sponsored_dust), 0n);
+    expect(onChainDust).toBeGreaterThan(0n);
+
+    // the DApp's own usage endpoint
+    const u = await usage();
+    expect(dustToSpecks(u.totals.sponsored_dust)).toBe(onChainDust);
+    expect(dustToSpecks(u.budget.settled_dust)).toBe(onChainDust);
+    expect(u.totals.confirmed).toBe(confirmed.length);
+    expect(u.by_entry_point.find((b: any) => b.key === `${contractAddress}:increment`)).toBeTruthy();
+
+    // the dashboard's overview (§19.1)
+    const o = (await admin('GET', '/v1/admin/overview?hours=24&bucket=hour')).json();
+    expect(dustToSpecks(o.totals.sponsored_dust)).toBe(onChainDust);
+    expect(o.totals.confirmed).toBe(confirmed.length);
+    const app = o.applications.find((a: any) => a.id === appId);
+    expect(dustToSpecks(app.sponsored_dust)).toBe(onChainDust);
+    expect(dustToSpecks(app.budget.settled_dust)).toBe(onChainDust);
+    expect(o.confirmation_latency.count).toBeGreaterThan(0);
+    expect(o.series.reduce((a: bigint, x: any) => a + dustToSpecks(x.sponsored_dust), 0n)).toBe(onChainDust);
+
+    // and the Prometheus exposition (PRD §25) — same number, read straight from Postgres at scrape time
+    // /metrics needs the operator (or metrics) token unless AETHERDUST_METRICS_PUBLIC is set
+    expect((await fetch(new URL('/metrics', apiUrl))).status).toBe(401);
+    const metrics = await fetch(new URL('/metrics', apiUrl), { headers: { authorization: `Bearer ${ADMIN}` } }).then((r) => r.text());
+    const sample = (name: string, labels: string) => {
+      const want = `${name}{${labels}} `;
+      const line = metrics.split('\n').find((l) => l.startsWith(want));
+      return line ? Number(line.slice(want.length)) : undefined;
+    };
+    expect(sample('aetherdust_dust_sponsored_total', `application="${appId}"`)).toBeCloseTo(Number(specksToDust(onChainDust)), 12);
+    expect(sample('aetherdust_sponsorships_confirmed_total', `application="${appId}"`)).toBe(confirmed.length);
+    expect(metrics).toContain(`aetherdust_build_info{component="api",version="0.1.0",adapter="midnight",network="undeployed"}`);
+    expect(metrics).toMatch(/aetherdust_sponsor_wallet_dust \d/);
+  }, 2 * 60_000);
 
   it('AC3/AC4/AC7 with real bytes: policy rejections happen before any sponsor work', async () => {
     const sealed = await sealIncrement();

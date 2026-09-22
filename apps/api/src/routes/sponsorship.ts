@@ -6,7 +6,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import type { Deps } from '../deps.js';
 import { apiKeyAuth } from '../plugins/auth.js';
-import { requestDto } from '../services/dto.js';
+import { requestDto, usageDto } from '../services/dto.js';
 import { createSponsorshipRequest, waitForOutcome } from '../services/sponsorship.js';
 
 const CreateBody = z.object({
@@ -24,11 +24,18 @@ export const sponsorshipRoutes = (deps: Deps) => async (app: FastifyInstance) =>
   const hit = async (req: FastifyRequest, reply: FastifyReply, key: string, limit: number) => {
     const r = await deps.limiter.hit(key, limit, deps.now().getTime());
     reply.header('X-RateLimit-Limit', String(r.limit)).header('X-RateLimit-Remaining', String(r.remaining));
-    if (!r.allowed) { reply.header('Retry-After', String(r.retryAfterSeconds)); throw new AetherDustError('RATE_LIMITED', 'rate limit exceeded', { key: key.split(':')[0], retry_after_seconds: r.retryAfterSeconds }); }
+    if (!r.allowed) {
+      const scope = key.split(':')[0]!;
+      deps.metrics?.rateLimited.inc({ scope });
+      reply.header('Retry-After', String(r.retryAfterSeconds));
+      throw new AetherDustError('RATE_LIMITED', 'rate limit exceeded', { key: scope, retry_after_seconds: r.retryAfterSeconds });
+    }
   };
 
   // auth needs only headers, so it and the credential/ip limits run in onRequest — before the body is parsed (plan §13).
   f.addHook('onRequest', apiKeyAuth(deps));
+  // every log line of this request carries the application (PRD §25); request_id/transaction_id are added as they are known
+  f.addHook('onRequest', async (req) => { req.log = req.log.child({ application_id: req.app!.applicationId }); });
   f.addHook('onRequest', async (req, reply) => {
     const rl = req.app!.policy.rate_limit;
     // policy limits govern sponsorship submissions; status polling / usage reads get a separate, generous bucket
@@ -57,11 +64,16 @@ export const sponsorshipRoutes = (deps: Deps) => async (app: FastifyInstance) =>
     const out = await createSponsorshipRequest(deps, req.app!, {
       requestId: req.body.request_id, userId: req.body.user_id, contract: req.body.contract, entryPoint: req.body.entry_point, transaction: req.body.transaction,
     });
+    const log = req.log.child({ request_id: out.request.requestId, id: out.request.id, user_id: out.request.userId });
     if (out.kind === 'rejected') {
+      deps.metrics?.recordOutcome(req.app!.applicationId, 'rejected', out.code);
+      log.info({ outcome: 'rejected', code: out.code, status: out.request.status }, 'sponsorship request rejected');
       return reply.status(ErrorCodes[out.code] as 400).send({ ...requestDto(out.request), error: { code: out.code, message: out.message, ...(out.details ? { details: out.details } : {}) } } as any);
     }
+    deps.metrics?.recordOutcome(req.app!.applicationId, out.kind === 'replay' ? 'replay' : 'accepted');
     const waitMs = Math.min(req.query.wait ?? 0, deps.config.AETHERDUST_MAX_WAIT_MS);
     const request = waitMs > 0 ? await waitForOutcome(deps, out.request.id, waitMs) : out.request;
+    log.info({ outcome: out.kind, status: request.status, transaction_id: request.submittedIdentifier, estimated_fee_specks: request.estimatedFeeSpecks?.toString() ?? null }, 'sponsorship request admitted');
     return reply.status(out.kind === 'replay' ? 200 : 202).send(requestDto(request) as any);
   });
 
@@ -97,13 +109,7 @@ export const sponsorshipRoutes = (deps: Deps) => async (app: FastifyInstance) =>
       budget: { limit_dust: specksToDust(limit), settled_dust: specksToDust(global?.settled ?? 0n), reserved_dust: specksToDust(global?.reserved ?? 0n), remaining_dust: specksToDust(limit - used > 0n ? limit - used : 0n) },
       per_user_limit_dust: specksToDust(policy.limits.per_user_budget_dust),
       top_users_this_period: users.map((u) => ({ user_id: u.scopeKey, settled_dust: specksToDust(u.settled), reserved_dust: specksToDust(u.reserved) })),
-      window: { from: from.toISOString(), to: to.toISOString(), bucket: req.query.bucket },
-      totals: { sponsored_dust: specksToDust(summary.totalSpecks), confirmed: summary.confirmed, rejected: summary.rejected, failed: summary.failed, pending: summary.pending },
-      by_contract: summary.byContract.map((b) => ({ contract: b.key, sponsored_dust: specksToDust(b.specks), count: b.count })),
-      by_entry_point: summary.byEntryPoint.map((b) => ({ key: b.key, sponsored_dust: specksToDust(b.specks), count: b.count })),
-      by_user: summary.byUser.map((b) => ({ user_id: b.key, sponsored_dust: specksToDust(b.specks), count: b.count })),
-      rejections: summary.byRejectionReason.map((b) => ({ code: b.key, count: b.count })),
-      series: summary.series.map((s) => ({ bucket: s.bucket.toISOString(), sponsored_dust: specksToDust(s.specks), count: s.count })),
+      ...usageDto(summary, req.query.bucket),
     });
   });
 };

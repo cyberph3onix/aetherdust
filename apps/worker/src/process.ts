@@ -8,6 +8,10 @@ const SPONSOR_TTL_MS = 30 * 60 * 1000;
 
 const budgetKey = (r: SponsorshipRequest) => ({ applicationId: r.applicationId, userId: r.userId, periodStart: r.periodStart! });
 
+/** Every worker log line about a request is traceable by the same three fields as the api (PRD §25). */
+export const logFields = (r: SponsorshipRequest, extra: Record<string, unknown> = {}) =>
+  ({ id: r.id, request_id: r.requestId, application_id: r.applicationId, user_id: r.userId, transaction_id: r.submittedIdentifier ?? undefined, ...extra });
+
 /** Terminal failure: move to `to`, give the reservation back. One transaction so state and budget can't disagree. */
 const failAndRelease = (deps: WorkerDeps, r: SponsorshipRequest, from: RequestStatus, to: RequestStatus, code: string, detail: string, details?: unknown) =>
   withTx(deps.pool, async (tx) => {
@@ -25,7 +29,7 @@ export const confirmRequest = (deps: WorkerDeps, r: SponsorshipRequest, from: Re
     const out = await transition(tx, r.id, from, 'CONFIRMED', { patch: { actualFeeSpecks: actualFee, confirmedAt: deps.now(), blockHeight: blockHeight ?? undefined } });
     await settle(tx, budgetKey(r), r.reservedSpecks, actualFee);
     if (actualFee > r.reservedSpecks) {
-      deps.log.warn({ requestId: r.id, reservedSpecks: r.reservedSpecks.toString(), actualFeeSpecks: actualFee.toString() }, 'actual fee exceeded reservation');
+      deps.log.warn(logFields(r, { reservedSpecks: r.reservedSpecks.toString(), actualFeeSpecks: actualFee.toString() }), 'actual fee exceeded reservation');
       await insertEvent(tx, r.id, { status: 'CONFIRMED', reasonCode: 'OVERSPEND', details: { reservedSpecks: r.reservedSpecks.toString(), estimatedFeeSpecks: r.estimatedFeeSpecks?.toString() ?? null, actualFeeSpecks: actualFee.toString(), overspendSpecks: (actualFee - r.reservedSpecks).toString() } });
     }
     const c = r.txSummary.calls[0];
@@ -39,23 +43,29 @@ export const confirmRequest = (deps: WorkerDeps, r: SponsorshipRequest, from: Re
  * track of a possibly-submitted transaction (Phase 0 V5b).
  */
 export const processClaimed = async (deps: WorkerDeps, r: SponsorshipRequest): Promise<SponsorshipRequest> => {
-  const log = deps.log.child({ requestId: r.id, request_id: r.requestId, app: r.applicationId, attempt: r.attempts });
+  const log = deps.log.child(logFields(r, { attempt: r.attempts }));
   const now = deps.now();
   if (r.ttlAt && r.ttlAt.getTime() - now.getTime() < deps.config.AETHERDUST_MIN_TTL_HEADROOM_MS) {
     log.warn('user transaction TTL too close; expiring');
+    deps.metrics?.recordOutcome('expired');
     return failAndRelease(deps, r, 'SPONSORING', 'EXPIRED', 'TIMEOUT', `user transaction TTL ${r.ttlAt.toISOString()} too close to sponsor safely`);
   }
   // 1. sponsor (balance DUST, sign, prove, merge) — nothing has left the process yet
   let sponsored;
+  const startedSponsoring = Date.now();
   try {
     sponsored = await deps.adapter.sponsor(new Uint8Array(r.txBytes), { ttlMs: SPONSOR_TTL_MS });
+    deps.metrics?.sponsorDuration.observe((Date.now() - startedSponsoring) / 1000);
   } catch (e) {
+    deps.metrics?.sponsorDuration.observe((Date.now() - startedSponsoring) / 1000);
     if (e instanceof SponsorError && e.retryable && r.attempts < MAX_ATTEMPTS) {
       log.warn({ err: e.message, code: e.code }, 'sponsoring failed (retryable); re-queueing');
+      deps.metrics?.recordOutcome('retried');
       return withTx(deps.pool, (tx) => transition(tx, r.id, 'SPONSORING', 'RESERVED', { reasonCode: e.code, reasonDetail: e.message, details: { retryable: true, attempt: r.attempts } }));
     }
     const code = e instanceof SponsorError ? e.code : 'SPONSORING_FAILED';
     log.error({ err: e instanceof Error ? e.message : String(e) }, 'sponsoring failed');
+    deps.metrics?.recordOutcome('failed');
     return failAndRelease(deps, r, 'SPONSORING', 'SPONSORING_FAILED', code, e instanceof Error ? e.message : String(e), e instanceof SponsorError ? e.detail : undefined);
   }
   // 2. persist the merged transaction FIRST, then submit
@@ -68,31 +78,43 @@ export const processClaimed = async (deps: WorkerDeps, r: SponsorshipRequest): P
 
 /** From SUBMITTED (fresh or recovered): submit the persisted bytes (idempotent) and wait for the outcome. */
 export const submitAndConfirm = async (deps: WorkerDeps, r: SponsorshipRequest, actualFee: bigint): Promise<SponsorshipRequest> => {
-  const log = deps.log.child({ requestId: r.id, request_id: r.requestId });
+  const log = deps.log.child(logFields(r));
   let identifier = r.submittedIdentifier;
   if (!identifier) {
+    const startedSubmit = Date.now();
     try {
       identifier = (await deps.adapter.submit(new Uint8Array(r.mergedTxBytes!))).identifier;
+      deps.metrics?.submitDuration.observe((Date.now() - startedSubmit) / 1000);
       await patchRequest(deps.pool, r.id, { submittedIdentifier: identifier });
+      log.info({ transaction_id: identifier }, 'submitted');
     } catch (e) {
+      deps.metrics?.submitDuration.observe((Date.now() - startedSubmit) / 1000);
       if (e instanceof SponsorError && !e.retryable) {
         log.error({ err: e.message, code: e.code, detail: e.detail }, 'node rejected the sponsored transaction');
+        deps.metrics?.recordOutcome('failed');
         return failAndRelease(deps, r, r.status, 'SUBMISSION_FAILED', e.code, e.message, e.detail);
       }
       log.warn({ err: e instanceof Error ? e.message : String(e) }, 'submit failed (retryable); parking as TIMEOUT for the reconciler');
+      deps.metrics?.recordOutcome('timeout');
       return withTx(deps.pool, (tx) => transition(tx, r.id, r.status, 'TIMEOUT', { reasonCode: 'TIMEOUT', reasonDetail: e instanceof Error ? e.message : String(e) }));
     }
   }
+  const startedWaiting = Date.now();
   const outcome = await deps.adapter.waitForConfirmation(identifier, deps.config.AETHERDUST_CONFIRM_TIMEOUT_S * 1000);
   if (outcome.status === 'confirmed') {
-    log.info({ blockHeight: outcome.blockHeight, feeSpecks: actualFee.toString() }, 'confirmed');
+    // measured from the start of this wait, so a resubmitted (recovered) request does not report the downtime as latency
+    deps.metrics?.confirmationLatency.observe((Date.now() - startedWaiting) / 1000);
+    log.info({ transaction_id: identifier, blockHeight: outcome.blockHeight, feeSpecks: actualFee.toString() }, 'confirmed');
+    deps.metrics?.recordOutcome('confirmed', actualFee);
     return confirmRequest(deps, r, r.status, actualFee, outcome.blockHeight);
   }
   if (outcome.status === 'failed') {
-    log.error({ reason: outcome.reason }, 'transaction failed on-chain');
+    log.error({ transaction_id: identifier, reason: outcome.reason }, 'transaction failed on-chain');
+    deps.metrics?.recordOutcome('failed');
     return failAndRelease(deps, r, r.status, 'SUBMISSION_FAILED', 'SUBMISSION_FAILED', outcome.reason, { code: outcome.code });
   }
-  log.warn('confirmation timeout; reservation kept until reconciled');
+  log.warn({ transaction_id: identifier }, 'confirmation timeout; reservation kept until reconciled');
+  deps.metrics?.recordOutcome('timeout');
   return r.status === 'TIMEOUT' ? r : withTx(deps.pool, (tx) => transition(tx, r.id, r.status, 'TIMEOUT', { reasonCode: 'TIMEOUT', reasonDetail: `no confirmation within ${deps.config.AETHERDUST_CONFIRM_TIMEOUT_S}s` }));
 };
 

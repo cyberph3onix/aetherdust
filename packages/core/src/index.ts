@@ -6,3 +6,4 @@ export * from './budget.js';
 export * from './state.js';
 export * from './api-key.js';
 export * from './rate-limit.js';
+export * from './metrics.js';

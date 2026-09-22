@@ -27,6 +27,18 @@ jobs:
       - run: pnpm test
         env:
           AETHERDUST_TEST_DATABASE_URL: postgres://aetherdust:aetherdust@localhost:5432/aetherdust_test
+      - name: dashboard smoke (Playwright over the built bundle + a seeded stack)
+        run: |
+          # its own database: the smoke stack seeds fixed traffic and must not see the integration suite's leftovers
+          PGPASSWORD=aetherdust psql -h localhost -U aetherdust -d aetherdust_test -c 'CREATE DATABASE aetherdust_smoke'
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:smoke
+        env:
+          CI: 'true'
+          AETHERDUST_TEST_DATABASE_URL: postgres://aetherdust:aetherdust@localhost:5432/aetherdust_smoke
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-traces, path: test-results/, retention-days: 7 }
   docker:
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +46,8 @@ jobs:
       - run: docker build -f deploy/Dockerfile -t aetherdust:ci .
       - run: docker run --rm aetherdust:ci cli 2>&1 | grep -q usage
       - run: docker run --rm aetherdust:ci wallet 2>&1 | grep -q usage
+      - run: docker build -f deploy/Dockerfile.dashboard -t aetherdust-dashboard:ci .
+      - run: docker run --rm --entrypoint sh aetherdust-dashboard:ci -c 'test -s /usr/share/nginx/html/index.html'
   e2e:
     # real Midnight stack (node 1.0.2 · indexer 4.3.5 · proof server 8.1.0) — nightly and on demand, ~5 min
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

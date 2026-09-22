@@ -26,3 +26,7 @@ export const getActivePolicy = async (db: Db, applicationId: string): Promise<Po
 };
 export const listPolicyVersions = async (db: Db, applicationId: string): Promise<PolicyRecord[]> =>
   (await db.query('SELECT * FROM policies WHERE application_id = $1 ORDER BY version DESC', [applicationId])).rows.map(rec);
+
+/** The active (highest) policy version of every application — used by /metrics and the dashboard overview. */
+export const listActivePolicies = async (db: Db): Promise<PolicyRecord[]> =>
+  (await db.query('SELECT DISTINCT ON (application_id) * FROM policies ORDER BY application_id, version DESC')).rows.map(rec);

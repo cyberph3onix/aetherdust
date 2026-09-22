@@ -1,0 +1,26 @@
+# Example scrape config (PRD §25). /metrics needs a bearer token (AETHERDUST_METRICS_TOKEN, or the admin token)
+# unless AETHERDUST_METRICS_PUBLIC=true — set the token and uncomment the authorization blocks below.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: aetherdust-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['api:8080']
+    authorization: { type: Bearer, credentials: '<AETHERDUST_METRICS_TOKEN>' }
+
+  # the worker's registry: sponsor/submit durations, confirmation latency, outcomes, live wallet
+  - job_name: aetherdust-worker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['worker:8081']
+    authorization: { type: Bearer, credentials: '<AETHERDUST_METRICS_TOKEN>' }
+
+# Alerts worth having (expressions, not a full rules file):
+#   sponsor wallet low → aetherdust_sponsor_wallet_dust < 1
+#   wallet unhealthy → aetherdust_sponsor_wallet_healthy == 0
+#   stale snapshot   → aetherdust_sponsor_wallet_snapshot_age_seconds > 120
+#   budget nearly gone → aetherdust_budget_remaining_dust / aetherdust_budget_limit_dust < 0.1
+#   rejections spike → rate(aetherdust_sponsorship_rejections_total[5m]) > 1
+#   nothing confirming → rate(aetherdust_worker_outcomes_total{outcome="confirmed"}[15m]) == 0

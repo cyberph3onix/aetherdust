@@ -9,6 +9,9 @@
 #   testnet            preview/preprod via public RPC + indexer, private proof server (.env: MIDNIGHT_NETWORK, your seed):
 #                        docker compose -f deploy/docker-compose.yml --profile testnet up --build
 #
+#   dashboard:         http://localhost:8090 (operator token = AETHERDUST_ADMIN_TOKEN); it proxies the api at /v1
+#   metrics:           http://localhost:8080/metrics (api) — the worker's are on its private port 8081
+#
 #   bootstrap an app:  docker compose -f deploy/docker-compose.yml run --rm api cli bootstrap --name ExampleDApp
 #   sponsor wallet:    docker compose -f deploy/docker-compose.yml run --rm worker wallet status|addresses|register-dust|new-seed
 #
@@ -51,6 +54,15 @@ services:
     # retried until the (profile-provided) node / indexer / proof server are up; the wallet sync itself takes ~30 s+
     restart: unless-stopped
     # no ports: the worker and its /internal RPC are only reachable on the compose network (plan §18)
+
+  dashboard:
+    build: { context: .., dockerfile: deploy/Dockerfile.dashboard }
+    image: aetherdust-dashboard:local
+    environment:
+      AETHERDUST_API_UPSTREAM: http://api:8080
+    ports: ['${AETHERDUST_DASHBOARD_PORT:-8090}:80']
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck: { test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1/ >/dev/null || exit 1'], interval: 10s, timeout: 5s, retries: 10 }
 
   # ---------- profile local-midnight / testnet: private proof server (sees sponsor witness data — never publish) ----------
   proof-server:

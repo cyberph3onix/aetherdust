@@ -1,6 +1,6 @@
 # AetherDust — MVP Implementation Plan
 
-**Status:** v1.5 (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; **Phase 3 complete (Lace on preprod)** — §0.4) · **Date:** 2026-09-20 · **Source spec:** `prd.md` v1.0
+**Status:** v1.6 (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; Phase 3 — §0.4; **Phase 4 complete (dashboard + observability)** — §0.5) · **Date:** 2026-09-22 · **Source spec:** `prd.md` v1.0
 **Scope of this document:** architecture + phased build plan. No implementation code.
 
 ---
@@ -126,6 +126,46 @@ imbalance is 0, no coin is selected, the dry run yields 1 SPECK, `1 <= 0` never 
 0 NIGHT / 0 DUST had `counter.increment` sponsored and **CONFIRMED on preprod** (tx `00b01648…`); the sponsor paid
 0.000001000000001 DUST — the network fee was exactly 1 SPECK (the zero-fee condition) plus the 1 µDUST overhead. AC1/AC2
 as an end user experiences them, with the real wallet.
+
+### 0.5 Phase 4 outcome (2026-09-22)
+
+Delivered: **observability** — a dependency-free Prometheus registry in `packages/core` (`metrics.ts`: counters,
+gauges, histograms, scrape-time collectors, exposition text) and `/metrics` on both processes. The api's registry
+counts the request pipeline in-process (`aetherdust_sponsorship_requests_total{application,outcome}`,
+`_rejections_total{code}`, `aetherdust_rate_limited_total{scope}`, HTTP count/latency) and reads everything that is
+*state* from Postgres at scrape time (`packages/db/stats.ts`): DUST sponsored, requests by status, the current
+period's budget limit/settled/reserved/remaining per application, the sponsor wallet snapshot, and submit→confirm
+latency (avg/p50/p95 over the last hour). The worker's registry (on its private port, next to `/internal`) measures
+what only it can: sponsor and submit durations, confirmation latency, outcomes, reconciler decisions, recovery,
+in-flight count, live wallet. Amounts are exposed in **DUST, not SPECK** — a Prometheus sample is a float64 and a
+SPECK count leaves exact-integer range at ~9 DUST. `/metrics` requires a bearer token by default — the admin token or a scoped `AETHERDUST_METRICS_TOKEN` — because the
+exposition names applications, their budgets and the sponsor balance and the api is the publicly exposed process;
+`AETHERDUST_METRICS_PUBLIC=true` opens it on a private network, `AETHERDUST_METRICS_ENABLED=false` removes it.
+Logs: every api request binds `application_id` and logs one line per outcome with `request_id`/`transaction_id`;
+the worker binds all three plus `user_id` on every line about a request (PRD §25).
+**Admin API:** `GET /v1/admin/overview` (one call for §19.1: wallet live+snapshot, totals, per-application policy,
+period budget and counts, rejection reasons, DUST series, recent requests) and
+`POST /v1/admin/applications/:id/policy/dry-run` (replays the last N stored requests through a candidate policy —
+per request `was` vs `would`, plus newly-rejected/newly-allowed counts — saving nothing). `/v1/usage` and the admin
+usage endpoint now share one `usageDto`, so the DApp view and the dashboard view cannot drift (AC11).
+**Dashboard** (`apps/dashboard`, React 19 + Vite + TanStack Query + Recharts, nginx image + compose service on
+:8090 proxying the api so it is same-origin): Overview, Requests (+ audit-trail drawer, status/user filters), Usage
+(§19.4 breakdowns with the table behind every chart), Policy (JSON editor + dry run), Applications (keys, token
+shown once), Wallet (+ runbook). Admin token in `sessionStorage`; any 401 returns to the login screen.
+**Tests:** 9 unit (exposition format, escaping, cumulative buckets, collector failure isolation) and 10 integration
+(`apps/api/src/observability.integration.test.ts`: metrics auth, counters, gauges asserted **against Postgres**,
+the worker registry, overview vs the per-application endpoints, dry-run) — 103 unit+integration green. AC11 is
+asserted twice: with the mock adapter in the integration suite, and on the real chain in `test/e2e` ("usage, the
+dashboard overview and /metrics all report the DUST the chain actually charged"). `test/smoke/stack.ts` boots the
+whole stack in one process with seeded traffic (+ a day of backfilled history) and `pnpm test:smoke` runs 7
+Playwright tests over the **built** bundle (sign-in, overview totals vs the API, audit trail, filters, usage
+breakdowns, dry run, wallet, key creation); both run in CI, and the dashboard image is built in the docker job.
+Migration `0003` adds the indexes these read paths need — `(application_id, status)`, `created_at DESC`,
+`confirmed_at WHERE CONFIRMED`, `usage_records(created_at)` — so a 15-second scrape is not a table scan.
+Deviations from §4: plain CSS with design tokens instead of Tailwind (the palette is shared with the charts, and
+there is no utility-class build step), a 40-line hash router instead of a routing library, and no TanStack Table
+(the tables are plain `<table>`s with server-side filters). Known cost: the bundle is 651 kB (192 kB gzipped),
+almost all React + Recharts — code-splitting is a Phase 5 nicety.
 
 ## 1. Midnight research findings
 
@@ -274,7 +314,8 @@ Key libraries: Fastify 5, zod, Drizzle ORM (Postgres), pino, `@midnight-ntwrk/le
 
 ## 4. Frontend (dashboard) architecture
 
-- React 18 + Vite + TypeScript, TanStack Query, TanStack Table, Recharts (usage charts), Tailwind. No SSR needed.
+- React 19 + Vite + TypeScript, TanStack Query, Recharts (usage charts). No SSR needed. *(Built without Tailwind and
+  TanStack Table — see §0.5.)*
 - Served as static files from its own nginx container (or from `api` under `/dashboard` in single-container mode).
 - Auth: operator **admin token** (`AETHERDUST_ADMIN_TOKEN`, separate from DApp API keys) sent as `Authorization: Bearer`; stored in memory/sessionStorage only.
 - Pages: Overview (wallet DUST balance/cap, NIGHT, budget gauges, success/reject counts), Requests (table + detail drawer with full audit trail), Policy (editor with validation + "dry-run against last N requests"), Usage (time series, by contract / entry point / user, rejection reasons), Applications (create/rotate/revoke API keys — secret shown once).
@@ -462,7 +503,7 @@ Indexes: requests by `(application_id, created_at desc)`, `(status)`, `(user_id)
 
 ## 16. Dashboard
 
-Backed by `/v1/admin/*`: `GET overview`, `GET requests?filters`, `GET requests/:id` (with events), `GET/PUT policy` (creates new version), `GET usage?bucket=hour|day&group_by=contract|entry_point|user|reason`, `POST/DELETE api-keys`, `GET wallet`. Overview refresh every 10s; usage charts per PRD §19.4. Policy editor validates with the same zod schema as the API and shows a diff before save.
+Backed by `/v1/admin/*`: `GET overview`, `GET requests?filters`, `GET requests/:id` (with events), `GET/PUT policy` (creates new version), `POST policy/dry-run`, `GET usage?bucket=hour|day` (all breakdowns in one response), `POST/DELETE api-keys`, `GET wallet`. Overview refresh every 10s; usage charts per PRD §19.4. The policy editor is validated server-side by the same zod schema and dry-runs a candidate against stored traffic before saving.
 
 ## 17. Docker deployment
 
@@ -556,7 +597,7 @@ Deliverable: `spikes/sponsor-spike/` script + `SPIKE_REPORT.md`.
 - `examples/example-dapp`: counter DApp with Lace on preview/preprod.
 - **Testable:** AC1/AC2 exactly as an end user experiences it (V7 resolved). If Lace does not honour `payFees:false` yet, this is documented as a blocker with the Node-side path as the fallback demo.
 
-### Phase 4 — Dashboard + observability · ~1–1.5 weeks
+### Phase 4 — Dashboard + observability · ~1–1.5 weeks — **complete (§0.5)**
 - Admin endpoints, dashboard pages (overview, requests, policy editor, usage, api keys), Prometheus `/metrics` (PRD §25), structured logs with `request_id/transaction_id/application_id`, wallet snapshots.
 - **Testable:** AC11 (usage matches Postgres and on-chain fees), Playwright smoke.
 

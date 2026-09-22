@@ -1,5 +1,5 @@
 import { publicStatus, specksToDust } from '@aetherdust/core';
-import type { RequestEvent, SponsorshipRequest, WalletSnapshot } from '@aetherdust/db';
+import type { RequestEvent, SponsorshipRequest, UsageSummary, WalletSnapshot } from '@aetherdust/db';
 import type { WalletStatus } from '@aetherdust/midnight';
 
 /** Public representation of a sponsorship request (PRD §18). */
@@ -41,4 +41,18 @@ export const walletSnapshotDto = (s: WalletSnapshot) => ({
   dust_balance_dust: specksToDust(s.dustBalanceSpecks), dust_cap_dust: s.dustCapSpecks == null ? null : specksToDust(s.dustCapSpecks),
   night: s.nightStars == null ? null : (Number(s.nightStars) / 1_000_000).toString(),
   dust_coins: s.dustCoins, dust_coins_in_flight: s.dustCoinsInFlight, detail: s.detail ?? null, taken_at: s.takenAt.toISOString(),
+});
+
+/**
+ * Usage in the wire shape both the DApp (`/v1/usage`) and the dashboard (`/v1/admin/.../usage`) read: snake_case,
+ * amounts as decimal DUST strings. One function so the two endpoints can never disagree (AC11).
+ */
+export const usageDto = (s: UsageSummary, bucket: 'hour' | 'day') => ({
+  window: { from: s.from.toISOString(), to: s.to.toISOString(), bucket },
+  totals: { sponsored_dust: specksToDust(s.totalSpecks), confirmed: s.confirmed, rejected: s.rejected, failed: s.failed, pending: s.pending },
+  by_contract: s.byContract.map((b) => ({ contract: b.key, sponsored_dust: specksToDust(b.specks), count: b.count })),
+  by_entry_point: s.byEntryPoint.map((b) => ({ key: b.key, sponsored_dust: specksToDust(b.specks), count: b.count })),
+  by_user: s.byUser.map((b) => ({ user_id: b.key, sponsored_dust: specksToDust(b.specks), count: b.count })),
+  rejections: s.byRejectionReason.map((b) => ({ code: b.key, count: b.count })),
+  series: s.series.map((x) => ({ bucket: x.bucket.toISOString(), sponsored_dust: specksToDust(x.specks), count: x.count })),
 });

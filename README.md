@@ -8,11 +8,12 @@ User (Lace, payFees:false) ─signed tx─▶ DApp ─POST /v1/sponsorship/reque
                                                                                  auth · rate limit · inspect · policy · fee · budget          balance DUST · prove · merge · submit · confirm
 ```
 
-Status: **Phase 3 complete** — a Lace wallet holding 0 NIGHT / 0 DUST had a contract call sponsored and confirmed on
-**preprod** through the example DApp (`@aetherdust/client` + `createSponsoredMidnightProvider`, Lace honouring
-`payFees:false`). The control plane, the real sponsor worker and the e2e suite on a local `undeployed` chain were proven
-in Phases 1–2; the mock sponsor remains for development. Next: dashboard + observability (Phase 4), hardening + release
-(Phase 5). Plan: [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md); the flow was first proven in
+Status: **Phase 4 complete** — the operator dashboard (overview, requests + audit trail, usage, policy editor with a
+dry run, API keys, wallet) and Prometheus `/metrics` on both processes. Phase 3 put a Lace wallet holding 0 NIGHT /
+0 DUST through a contract call sponsored and confirmed on **preprod** (`@aetherdust/client` +
+`createSponsoredMidnightProvider`, Lace honouring `payFees:false`); the control plane, the real sponsor worker and the
+e2e suite on a local `undeployed` chain were proven in Phases 1–2. The mock sponsor remains for development.
+Next: hardening + release (Phase 5). Plan: [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md); the flow was first proven in
 [`spikes/sponsor-spike/SPIKE_REPORT.md`](spikes/sponsor-spike/SPIKE_REPORT.md).
 
 ## Quickstart (Docker, mock sponsor)
@@ -23,6 +24,7 @@ docker compose -f deploy/docker-compose.yml up --build -d
 docker compose -f deploy/docker-compose.yml run --rm api cli bootstrap --name ExampleDApp --policy /app/scripts/demo-policy.json
 #  → prints the API key once
 AETHERDUST_API_KEY=ad_live_… scripts/demo.sh   # approve / reject / budget / idempotency / status / usage
+open http://localhost:8090                      # operator dashboard (sign in with AETHERDUST_ADMIN_TOKEN)
 open http://localhost:8080/docs                 # OpenAPI UI
 ```
 
@@ -52,6 +54,32 @@ Throughput is bounded by the sponsor's DUST **coin count** (one in-flight sponso
 UTXOs to raise it). The proof server sees the sponsor's witness data and must stay private. `SPONSOR_BALANCE_LOW`
 (HTTP 503) is returned when the wallet would drop below `AETHERDUST_MIN_SPONSOR_DUST`. Fees are dynamic (block
 fullness): the api reserves `estimate × (1 + margin)`, the worker settles the real `DustSpend.vFee`.
+
+## Dashboard & observability
+
+The dashboard (`apps/dashboard`, served by nginx on `:8090`, which proxies the api so it is same-origin) is the
+operator's control plane: **Overview** (wallet, budgets per application, DUST over time, success rate, confirmation
+p95, rejections, recent requests), **Requests** (filter by status/user; a drawer with the full audit trail),
+**Usage** (PRD §19.4: DUST over time, by contract, by entry point, by user, rejections — with the table behind every
+chart), **Policy** (JSON editor + `dry run`: replays the last N stored requests through a candidate policy and lists
+exactly which ones would change outcome, without saving), **Applications** (create, suspend, API keys — the token is
+shown once) and **Wallet**. It talks only to `/v1/admin/*` with the operator token, which it keeps in `sessionStorage`.
+
+```bash
+pnpm --filter @aetherdust/dashboard dev     # :5174, proxies /v1 to a local api on :8080
+pnpm smoke:stack                            # the whole stack in one process with seeded traffic (:8099)
+pnpm test:smoke                             # Playwright smoke over the built bundle
+```
+
+`GET /metrics` (api, and the worker on its private port) exposes Prometheus metrics (PRD §25): request rates and
+outcomes by application and error code, rate-limit hits, HTTP latency, sponsor/submit durations and confirmation
+latency (worker), plus gauges read from Postgres at scrape time — DUST sponsored, budget limit/settled/reserved/
+remaining per application, requests by status, and the sponsor wallet (DUST, NIGHT, coins, synced, snapshot age).
+`/metrics` requires a bearer token — the admin token, or a scoped `AETHERDUST_METRICS_TOKEN` — because the exposition
+names applications, their budgets and the sponsor balance; `AETHERDUST_METRICS_PUBLIC=true` opens it for a private
+network and `AETHERDUST_METRICS_ENABLED=false` removes it. A scrape config and the alerts worth having are in
+[`deploy/prometheus.example.yml`](deploy/prometheus.example.yml). Every log line for a request carries `request_id`,
+`application_id` and `transaction_id`.
 
 ## Client SDK (`@aetherdust/client`)
 
@@ -131,11 +159,13 @@ on restart the worker drains those first, then resumes.
 | `packages/midnight` | `SponsorAdapter` contract, real ledger-v8 inspector + `wellFormed` pre-flight, mock adapter, **real adapter** (`WalletFacade`, DUST-only balancing, post-merge check, node error mapping), api-side remote adapter (+ Phase 0 fixtures) |
 | `packages/config` | validated environment |
 | `apps/api` | Fastify API (`/v1/sponsorship/*`, `/v1/usage`, `/v1/admin/*`, `/docs`), operator CLI |
-| `apps/worker` | single-writer sponsorship worker: recovery, reconciler, private `/internal` RPC, `wallet` CLI |
+| `apps/worker` | single-writer sponsorship worker: recovery, reconciler, private `/internal` RPC + `/metrics`, `wallet` CLI |
+| `apps/dashboard` | operator dashboard (React + Vite): overview, requests, usage, policy editor + dry run, API keys, wallet |
 | `deploy/` | Dockerfile, compose, `.env.example` |
 | `packages/client` | `@aetherdust/client`: REST client + connector-backed midnight-js providers, typed errors |
 | `examples/example-dapp` | Vite counter DApp: Lace (`payFees:false`) + AetherDust; `deploy-counter` script; V7 runbook |
 | `test/e2e` | real-chain e2e: user wallet (0 NIGHT/0 DUST) + counter contract → api → worker → confirmed; the SDK over a connector-shaped wallet |
+| `test/smoke` | one-process stack with seeded traffic + the Playwright dashboard smoke test |
 | `spikes/sponsor-spike` | Phase 0: the live proof of DUST sponsorship on Midnight (+ `deploy/native/stack.sh` to run the chain without Docker) |
 
 ## Development
@@ -144,6 +174,7 @@ on restart the worker drains those first, then resumes.
 pnpm install
 pnpm -r typecheck && pnpm build
 pnpm test            # unit + integration (starts an embedded Postgres unless AETHERDUST_TEST_DATABASE_URL is set)
+pnpm test:smoke      # dashboard smoke test (Playwright; needs `npx playwright install chromium` once)
 
 # e2e on a real local chain (~4 min incl. the wallet sync; nightly in CI). Either bring the chain up alone…
 docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml --profile local-midnight up -d --wait midnight-node indexer proof-server
@@ -160,6 +191,7 @@ AETHERDUST_ADMIN_TOKEN=e2e-compose-admin-token-0123456789 AETHERDUST_E2E_WORKER_
   `/internal` RPC is shared-secret protected and only answers estimate/health — it cannot spend).
 - The sponsor only ever balances `['dust']`; before submission the merged transaction is checked to be the user's
   transaction plus exactly one `DustSpend` with no negative imbalance, so a user can never make the sponsor move NIGHT.
-- API keys are stored as scrypt hashes; the token is shown exactly once. Admin routes use a separate operator token.
+- API keys are stored as scrypt hashes; the token is shown exactly once. Admin routes use a separate operator token;
+  the dashboard holds it in `sessionStorage` only and never talks to Midnight itself.
 - Rate limiting and body-size limits run before any transaction is deserialised; the same transaction bytes can never be
   sponsored twice (`tx_hash` is unique across every non-rejected request), independent of `request_id`.

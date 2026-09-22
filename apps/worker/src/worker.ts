@@ -22,15 +22,19 @@ export class Worker {
     // SPONSORING = crashed before anything was persisted/sent → safe to retry from scratch
     for (const r of await listByStatus(pool, ['SPONSORING'])) {
       await withTx(pool, (tx) => transition(tx, r.id, 'SPONSORING', 'RESERVED', { reasonCode: 'RECOVERED', reasonDetail: 'worker restarted mid-sponsoring', details: { previousWorker: r.workerId } }));
+      this.deps.metrics?.recovered.inc({ kind: 'requeued' });
       stats.requeued++;
     }
     // SUBMITTED/TIMEOUT/UNKNOWN = bytes persisted; resubmit (idempotent) and wait again, or expire if the TTL is gone
     for (const r of await listByStatus(pool, ['SUBMITTED', 'TIMEOUT', 'UNKNOWN'])) {
       if (r.ttlAt && r.ttlAt.getTime() + this.deps.config.AETHERDUST_CONFIRM_GRACE_S * 1000 < this.deps.now().getTime()) {
         await withTx(pool, async (tx) => { await transition(tx, r.id, r.status, 'EXPIRED', { reasonCode: 'TIMEOUT', reasonDetail: 'TTL and grace period elapsed without confirmation' }); await release(tx, { applicationId: r.applicationId, userId: r.userId, periodStart: r.periodStart! }, r.reservedSpecks); });
+        this.deps.metrics?.recovered.inc({ kind: 'expired' });
+        this.deps.metrics?.recordOutcome('expired');
         stats.expired++;
         continue;
       }
+      this.deps.metrics?.recovered.inc({ kind: 'resumed' });
       stats.resumed++;
       this.#track(submitAndConfirm(this.deps, r, r.actualFeeSpecks ?? r.estimatedFeeSpecks ?? 0n).catch((e) => log.error({ err: e, requestId: r.id }, 'recovery failed')));
     }
@@ -38,7 +42,11 @@ export class Worker {
     return stats;
   }
 
-  #track(p: Promise<unknown>) { this.#inFlight.add(p); void p.finally(() => this.#inFlight.delete(p)); }
+  #track(p: Promise<unknown>) {
+    this.#inFlight.add(p);
+    this.deps.metrics?.inFlight.set(this.#inFlight.size);
+    void p.finally(() => { this.#inFlight.delete(p); this.deps.metrics?.inFlight.set(this.#inFlight.size); });
+  }
 
   /**
    * Reconciler (plan §14): TIMEOUT/UNKNOWN requests hold their reservation until the chain answers. Ask the indexer
@@ -53,11 +61,15 @@ export class Worker {
         const outcome = await adapter.waitForConfirmation(r.submittedIdentifier, 5_000).catch((e) => { log.warn({ err: e, requestId: r.id }, 'reconcile probe failed'); return { status: 'timeout' as const }; });
         if (outcome.status === 'confirmed') {
           await confirmRequest(this.deps, r, r.status, r.actualFeeSpecks ?? r.estimatedFeeSpecks ?? 0n, outcome.blockHeight);
+          this.deps.metrics?.reconciles.inc({ outcome: 'confirmed' });
+          this.deps.metrics?.recordOutcome('confirmed', r.actualFeeSpecks ?? r.estimatedFeeSpecks ?? 0n);
           stats.confirmed++;
           continue;
         }
         if (outcome.status === 'failed') {
           await withTx(pool, async (tx) => { await transition(tx, r.id, r.status, 'SUBMISSION_FAILED', { reasonCode: 'SUBMISSION_FAILED', reasonDetail: outcome.reason }); await release(tx, { applicationId: r.applicationId, userId: r.userId, periodStart: r.periodStart! }, r.reservedSpecks); });
+          this.deps.metrics?.reconciles.inc({ outcome: 'failed' });
+          this.deps.metrics?.recordOutcome('failed');
           stats.expired++;
           continue;
         }
@@ -65,8 +77,10 @@ export class Worker {
       const deadline = (r.ttlAt?.getTime() ?? r.createdAt.getTime() + 3_600_000) + this.deps.config.AETHERDUST_CONFIRM_GRACE_S * 1000;
       if (deadline < this.deps.now().getTime()) {
         await withTx(pool, async (tx) => { await transition(tx, r.id, r.status, 'EXPIRED', { reasonCode: 'TIMEOUT', reasonDetail: 'TTL and grace period elapsed without confirmation' }); await release(tx, { applicationId: r.applicationId, userId: r.userId, periodStart: r.periodStart! }, r.reservedSpecks); });
+        this.deps.metrics?.reconciles.inc({ outcome: 'expired' });
+        this.deps.metrics?.recordOutcome('expired');
         stats.expired++;
-      } else stats.pending++;
+      } else { this.deps.metrics?.reconciles.inc({ outcome: 'pending' }); stats.pending++; }
     }
     if (stats.confirmed || stats.expired) log.info(stats, 'reconcile pass');
     return stats;
@@ -82,6 +96,7 @@ export class Worker {
       const r = await withTx(this.deps.pool, (tx) => claimNext(tx, this.deps.config.AETHERDUST_WORKER_ID));
       if (!r) break;
       claimed++;
+      this.deps.metrics?.claimed.inc();
       this.#track(processClaimed(this.deps, r).catch((e) => this.deps.log.error({ err: e, requestId: r.id }, 'processing failed unexpectedly')));
     }
     return claimed;

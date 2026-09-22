@@ -20,7 +20,9 @@
     "db:migrate": "pnpm --filter @aetherdust/db migrate",
     "aetherdust": "pnpm --filter @aetherdust/api cli",
     "test:e2e": "AETHERDUST_E2E=1 vitest run --project e2e",
-    "test:e2e:deployed": "AETHERDUST_E2E=1 AETHERDUST_E2E_API_URL=${AETHERDUST_E2E_API_URL:-http://127.0.0.1:8080} vitest run --project e2e test/e2e/sponsored.e2e.test.ts"
+    "test:e2e:deployed": "AETHERDUST_E2E=1 AETHERDUST_E2E_API_URL=${AETHERDUST_E2E_API_URL:-http://127.0.0.1:8080} vitest run --project e2e test/e2e/sponsored.e2e.test.ts",
+    "test:smoke": "playwright test",
+    "smoke:stack": "tsx --conditions=development test/smoke/stack.ts"
   },
   "devDependencies": {
     "@aetherdust/api": "workspace:*",
@@ -39,6 +41,7 @@
     "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.1.1",
     "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.1.1",
     "@midnightntwrk/wallet-sdk-hd": "3.0.3",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.23.1",
     "embedded-postgres": "18.4.0-beta.17",
