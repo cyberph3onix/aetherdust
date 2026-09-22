@@ -52,7 +52,7 @@ jobs:
       - run: docker run --rm aetherdust:ci wallet 2>&1 | grep -q usage
       - run: docker build -f deploy/Dockerfile.dashboard -t aetherdust-dashboard:ci .
       - run: docker run --rm --entrypoint sh aetherdust-dashboard:ci -c 'test -s /usr/share/nginx/html/index.html'
-      - name: quickstart on a clean machine (mock profile: up → bootstrap → demo → dashboard → metrics)
+      - name: 'quickstart on a clean machine (mock profile: up → bootstrap → demo → dashboard → metrics)'
         run: |
           set -euo pipefail
           printf 'AETHERDUST_ADMIN_TOKEN=ci-admin-token-0123456789abcdef\nAETHERDUST_SPONSOR_ADAPTER=mock\nAETHERDUST_MOCK_CONFIRM_MS=300\n' > deploy/.env

@@ -20,7 +20,9 @@ export default defineConfig({
   webServer: [
     { command: 'pnpm smoke:stack', url: `${API}/healthz`, reuseExistingServer: false, timeout: 180_000, stdout: 'pipe', stderr: 'pipe' },
     {
-      command: `VITE_AETHERDUST_API_URL=${API} pnpm --filter @aetherdust/dashboard build && pnpm --filter @aetherdust/dashboard preview --port 5174 --strictPort`,
+      // --host 127.0.0.1: vite preview otherwise binds "localhost", which resolves to ::1 first on CI runners,
+      // and the check below (and the browser) would be knocking on 127.0.0.1
+      command: `VITE_AETHERDUST_API_URL=${API} pnpm --filter @aetherdust/dashboard build && pnpm --filter @aetherdust/dashboard preview --host 127.0.0.1 --port 5174 --strictPort`,
       url: UI, reuseExistingServer: false, timeout: 180_000,
     },
   ],
