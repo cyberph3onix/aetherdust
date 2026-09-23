@@ -6,7 +6,10 @@ import wasm from 'vite-plugin-wasm';
 // The Midnight ledger and onchain runtime are WASM modules with top-level await (Vite 8 / rolldown handles TLA natively);
 // they cannot be pre-bundled, so their CommonJS deps are listed explicitly. The level DB and scale-codec deps expect a few
 // Node built-ins (assert, events, process, Buffer): provided by vite-plugin-node-polyfills in dev and build.
+// BASE_PATH lets the same bundle serve from a domain root (Netlify/Vercel/`pnpm preview`) or from a GitHub Pages
+// project path (/<repo>/). The Pages workflow sets it; everything else leaves it alone.
 export default defineConfig({
+  base: process.env.BASE_PATH ?? '/',
   resolve: { alias: { 'cross-fetch': fileURLToPath(new URL('./src/shims/cross-fetch.ts', import.meta.url)) } },
   plugins: [wasm(), nodePolyfills({ include: ['assert', 'events', 'util', 'buffer', 'process', 'stream'], globals: { Buffer: true, process: true, global: true } })],
   optimizeDeps: {

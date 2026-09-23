@@ -142,9 +142,12 @@ $('wallet-btn').addEventListener('click', async () => {
 });
 
 // ---------- reading the public record ----------
+// the ZK assets are served beside the page, so they must respect the deployment's base path (a GitHub Pages
+// project site serves from /<repo>/, not from the domain root)
+const assetsUrl = new URL(`${import.meta.env.BASE_URL}allowlist`, location.origin).toString();
 const compiled = CompiledContract.make('allowlist', Allowlist.Contract).pipe(
   CompiledContract.withWitnesses(witnesses),
-  CompiledContract.withCompiledFileAssets('/allowlist'),
+  CompiledContract.withCompiledFileAssets(assetsUrl),
 );
 
 type Verdict = 'yes' | 'no' | 'unknown';
@@ -233,7 +236,7 @@ const providers = async () => {
       r.status === 'confirmed' ? 'ok' : '',
     ),
   });
-  const zk = new FetchZkConfigProvider<'claimAccess'>(new URL('/allowlist', location.origin).toString());
+  const zk = new FetchZkConfigProvider<'claimAccess'>(assetsUrl);
   const proofUrl = proofServerField() || walletConfig.proverServerUri || 'http://localhost:6300';
   log(`proving membership on ${proofUrl}`);
   return {

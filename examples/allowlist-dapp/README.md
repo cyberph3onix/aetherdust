@@ -63,6 +63,13 @@ pnpm compile      # compact compile → contract/managed/allowlist (circuits, pr
 pnpm test         # 7 tests against the circuit simulator
 ```
 
+![compact compile output](../../docs/images/compact-compile.png)
+
+![contract tests passing](../../docs/images/contract-tests.png)
+
+*(Both images render the verbatim output of those two commands.)* CI re-runs the compile on a clean machine and
+checks the committed circuits and keys are byte-for-byte what this source produces.
+
 ## Running it
 
 Prerequisites: Node 22, Docker, the [Compact toolchain](https://docs.midnight.network/getting-started/installation),
