@@ -118,6 +118,26 @@ jobs:
           MIDNIGHT_INDEXER_URL: http://127.0.0.1:8088/api/v4/graphql
           MIDNIGHT_INDEXER_WS_URL: ws://127.0.0.1:8088/api/v4/graphql/ws
           MIDNIGHT_PROOF_SERVER_URL: http://127.0.0.1:6300
+      - name: the allowlist DApp in a browser, against the same chain
+        run: |
+          set -euo pipefail
+          cd examples/allowlist-dapp
+          SETUP=$(MIDNIGHT_NETWORK=undeployed \
+            AETHERDUST_SPONSOR_SEED=0000000000000000000000000000000000000000000000000000000000000001 \
+            AETHERDUST_SPONSOR_ADAPTER=midnight AETHERDUST_WALLET_SYNC_TIMEOUT_S=900 \
+            pnpm deploy-contract setup 1 | tail -n +1)
+          cd ../..
+          export ALLOWLIST_CONTRACT=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.contractAddress)" "$SETUP")
+          export ALLOWLIST_SECRET=$(node -e "const d=JSON.parse(process.argv[1]);console.log(d.members[0].secret)" "$SETUP")
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:smoke test/smoke/allowlist-dapp.spec.ts
+        env:
+          CI: 'true'
+          AETHERDUST_TEST_DATABASE_URL: postgres://aetherdust:aetherdust@localhost:5432/aetherdust_smoke2
+          MIDNIGHT_NODE_URL: http://127.0.0.1:9944
+          MIDNIGHT_INDEXER_URL: http://127.0.0.1:8088/api/v4/graphql
+          MIDNIGHT_INDEXER_WS_URL: ws://127.0.0.1:8088/api/v4/graphql/ws
+          MIDNIGHT_PROOF_SERVER_URL: http://127.0.0.1:6300
       - name: e2e, deployed (drives the compose api/worker containers; SIGKILLs the worker mid-sponsorship)
         run: pnpm test:e2e:deployed
         env:

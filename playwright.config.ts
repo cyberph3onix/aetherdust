@@ -7,6 +7,7 @@ import { defineConfig } from '@playwright/test';
  */
 const API = 'http://127.0.0.1:8099';
 const UI = 'http://127.0.0.1:5174';
+const DAPP = 'http://127.0.0.1:5175';
 
 export default defineConfig({
   testDir: 'test/smoke',
@@ -24,6 +25,11 @@ export default defineConfig({
       // and the check below (and the browser) would be knocking on 127.0.0.1
       command: `VITE_AETHERDUST_API_URL=${API} pnpm --filter @aetherdust/dashboard build && pnpm --filter @aetherdust/dashboard preview --host 127.0.0.1 --port 5174 --strictPort`,
       url: UI, reuseExistingServer: false, timeout: 180_000,
+    },
+    {
+      // the Private Allowlist Access page; its spec skips unless a deployed contract is supplied
+      command: 'pnpm --filter @aetherdust/allowlist-dapp build && pnpm --filter @aetherdust/allowlist-dapp preview --host 127.0.0.1 --port 5175 --strictPort',
+      url: DAPP, reuseExistingServer: false, timeout: 180_000,
     },
   ],
 });

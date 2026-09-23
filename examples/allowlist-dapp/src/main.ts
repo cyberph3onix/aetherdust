@@ -50,6 +50,26 @@ const baseUrl = field('baseUrl', 'baseUrl', 'http://localhost:8080');
 const apiKey = field('apiKey', 'apiKey');
 const userId = field('userId', 'userId', 'demo-user-1');
 const proofServerField = field('proofServer', 'proofServer', 'http://localhost:6300');
+const indexerField = field('indexer', 'indexer', '');
+
+/** Well-known indexer for a network, so the public record loads before any wallet is connected. */
+const defaultIndexer = (net: string): { url: string; ws: string } =>
+  net === 'undeployed'
+    ? { url: 'http://127.0.0.1:8088/api/v4/graphql', ws: 'ws://127.0.0.1:8088/api/v4/graphql/ws' }
+    : { url: `https://indexer.${net}.midnight.network/api/v4/graphql`, ws: `wss://indexer.${net}.midnight.network/api/v4/graphql/ws` };
+
+/**
+ * The indexer to read from: the connected wallet's, else the one configured here, else the network's well-known
+ * one. Reading the allowlist is a public act — a visitor should see the list and the tally before connecting
+ * anything.
+ */
+const indexer = () => {
+  if (walletConfig) return { url: walletConfig.indexerUri, ws: walletConfig.indexerWsUri };
+  const configured = indexerField();
+  if (configured) return { url: configured, ws: configured.replace(/^http/, 'ws').replace(/\/graphql\/?$/, '/graphql/ws') };
+  return defaultIndexer(network());
+};
+const publicData = () => indexerPublicDataProvider(indexer().url, indexer().ws);
 
 // ---------- the secret (private state, this browser only) ----------
 const SECRET_KEY = 'allowlist.secret';
@@ -124,15 +144,26 @@ const connect = async () => {
   await refresh();
 };
 
+/**
+ * Disconnect, as far as a DApp can: connector API 4.0.1 has `connect` and no `disconnect`, so a page can drop the
+ * session and stop using the wallet, but it cannot revoke the permission the wallet granted this site. We call a
+ * `disconnect` method if a wallet happens to provide one, and say plainly what happened either way.
+ */
 const disconnect = async () => {
-  try { await (connected as unknown as { disconnect?: () => Promise<void> })?.disconnect?.(); } catch { /* the wallet may not offer one */ }
+  const wallet = connected as unknown as { disconnect?: () => Promise<void> } | undefined;
+  let revoked = false;
+  if (typeof wallet?.disconnect === 'function') {
+    try { await wallet.disconnect(); revoked = true; } catch { /* keep going: the page disconnects regardless */ }
+  }
   connected = undefined;
   walletConfig = undefined;
   $('wallet-id').textContent = 'no wallet';
   $('wallet-btn').textContent = 'Connect wallet';
   setStamp('unknown');
-  render({ listed: 'unknown', entered: 'unknown' });
-  log('disconnected — the public record below is no longer being read');
+  log(revoked
+    ? 'disconnected, and the wallet revoked this site'
+    : 'disconnected — this page has dropped the wallet. Lace still lists the site under its connected sites; remove it there to revoke.');
+  await refresh();
 };
 
 $('wallet-btn').addEventListener('click', async () => {
@@ -181,12 +212,13 @@ const render = (s: { listed: Verdict; entered: Verdict }) => {
 
 const refresh = async () => {
   renderSecret();
+  if (!connected) $('net-badge').textContent = network() || 'no network'; // the badge follows the field until a wallet says otherwise
   $('contract-out').textContent = contractAddress() ? short(contractAddress(), 10, 8) : 'not set';
   $('contract-out').title = contractAddress();
-  if (!walletConfig || !/^[0-9a-f]{64}$/i.test(contractAddress())) return render({ listed: 'unknown', entered: 'unknown' });
+  if (!/^[0-9a-f]{64}$/i.test(contractAddress())) return render({ listed: 'unknown', entered: 'unknown' });
 
   try {
-    const state = await indexerPublicDataProvider(walletConfig.indexerUri, walletConfig.indexerWsUri).queryContractState(contractAddress());
+    const state = await publicData().queryContractState(contractAddress());
     if (!state) { log('no contract at that address on this network', 'bad'); return render({ listed: 'unknown', entered: 'unknown' }); }
 
     const ledger = Allowlist.ledger(state.data);
@@ -223,7 +255,7 @@ const refresh = async () => {
     log(`could not read the allowlist: ${(e as Error).message}`, 'bad');
   }
 };
-$<HTMLInputElement>('contract').addEventListener('change', () => void refresh());
+for (const id of ['contract', 'network', 'indexer']) $<HTMLInputElement>(id).addEventListener('change', () => void refresh());
 
 // ---------- claiming ----------
 const providers = async () => {
@@ -245,7 +277,7 @@ const providers = async () => {
       accountId: sponsored.keys.coinPublicKey,
       privateStoragePasswordProvider: () => `${sponsored.keys.coinPublicKey}!`,
     }),
-    publicDataProvider: indexerPublicDataProvider(walletConfig.indexerUri, walletConfig.indexerWsUri),
+    publicDataProvider: publicData(),
     zkConfigProvider: zk,
     proofProvider: httpClientProofProvider(proofUrl, zk),
     walletProvider: sponsored,
