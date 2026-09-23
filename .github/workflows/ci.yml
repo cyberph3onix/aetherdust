@@ -110,6 +110,14 @@ jobs:
           MIDNIGHT_INDEXER_URL: http://127.0.0.1:8088/api/v4/graphql
           MIDNIGHT_INDEXER_WS_URL: ws://127.0.0.1:8088/api/v4/graphql/ws
           MIDNIGHT_PROOF_SERVER_URL: http://127.0.0.1:6300
+      - name: e2e, Private Allowlist Access (gasless claim on a real chain)
+        run: AETHERDUST_E2E=1 pnpm vitest run --project e2e test/e2e/allowlist.e2e.test.ts
+        env:
+          AETHERDUST_TEST_DATABASE_URL: postgres://aetherdust:aetherdust@localhost:5432/aetherdust_test
+          MIDNIGHT_NODE_URL: http://127.0.0.1:9944
+          MIDNIGHT_INDEXER_URL: http://127.0.0.1:8088/api/v4/graphql
+          MIDNIGHT_INDEXER_WS_URL: ws://127.0.0.1:8088/api/v4/graphql/ws
+          MIDNIGHT_PROOF_SERVER_URL: http://127.0.0.1:6300
       - name: e2e, deployed (drives the compose api/worker containers; SIGKILLs the worker mid-sponsorship)
         run: pnpm test:e2e:deployed
         env:
