@@ -175,8 +175,12 @@ $('wallet-btn').addEventListener('click', async () => {
   try {
     connected ? await disconnect() : await connect();
   } catch (e) {
-    log(`connect failed: ${(e as Error).message}`, 'bad');
-    $('wallet-id').textContent = 'connect failed — see Activity';
+    const msg = (e as Error).message ?? String(e);
+    log(`connect failed: ${msg}`, 'bad');
+    // say what to do about it, next to the button that failed — the wallet's own words are usually the clearest
+    $('wallet-id').textContent = /lock/i.test(msg) ? 'wallet locked — unlock it, then press Connect again'
+      : /network/i.test(msg) ? msg
+        : `connect failed: ${msg}`;
     btn.textContent = label ?? 'Connect wallet';
   } finally { btn.disabled = false; }
 });

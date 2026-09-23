@@ -21,7 +21,7 @@ if (!out || !title || !cwd || !commands.length) {
 
 const COLS = 132;
 const prompt = (cmd) => `\x1b[1;38;5;141m$ ${cmd}\x1b[0m\r\n`;
-let bytes = '';
+const chunks = []; // one per command: a progress bar's cursor-up must not reach back into the previous command
 for (const cmd of commands) {
   const log = path.join(mkdtempSync(path.join(tmpdir(), 'tshot-')), 'tty');
   try {
@@ -32,7 +32,7 @@ for (const cmd of commands) {
   }
   // `script` frames the capture with its own header/footer lines
   const raw = readFileSync(log, 'latin1').replace(/^Script started.*\n/, '').replace(/\n?Script done.*\n?$/, '');
-  bytes += prompt(cmd) + Buffer.from(raw, 'latin1').toString('utf8').replace(/\r?\n/g, '\r\n') + '\r\n';
+  chunks.push(prompt(cmd) + Buffer.from(raw, 'latin1').toString('utf8').replace(/\r?\n/g, '\r\n'));
 }
 
 const html = `<!doctype html><html><head>
@@ -51,19 +51,22 @@ const html = `<!doctype html><html><head>
 const browser = await chromium.launch();
 const page = await browser.newPage({ deviceScaleFactor: 2, viewport: { width: 1400, height: 800 } });
 await page.setContent(html, { waitUntil: 'networkidle' });
-await page.evaluate(async ({ bytes, cols }) => {
-  const term = new window.Terminal({
-    cols, rows: 400, fontSize: 13, lineHeight: 1.25, fontFamily: 'ui-monospace, "DejaVu Sans Mono", monospace',
-    theme: { background: '#1b1a22', foreground: '#e8e6f0' }, scrollback: 0,
-  });
-  term.open(document.getElementById('t'));
-  await new Promise((r) => term.write(bytes, r));
-  // trim to the last line with content
-  const buf = term.buffer.active;
-  let last = 0;
-  for (let i = 0; i < buf.length; i++) if (buf.getLine(i)?.translateToString(true).trim()) last = i;
-  term.resize(cols, last + 1);
-}, { bytes, cols: COLS });
+await page.evaluate(async ({ chunks, cols }) => {
+  for (const bytes of chunks) {
+    const el = document.getElementById('t').appendChild(document.createElement('div'));
+    const term = new window.Terminal({
+      cols, rows: 200, fontSize: 13, lineHeight: 1.25, fontFamily: 'ui-monospace, "DejaVu Sans Mono", monospace',
+      theme: { background: '#1b1a22', foreground: '#e8e6f0' }, scrollback: 0,
+    });
+    term.open(el);
+    await new Promise((r) => term.write(bytes, r));
+    // trim to the last line with content
+    const buf = term.buffer.active;
+    let last = 0;
+    for (let i = 0; i < buf.length; i++) if (buf.getLine(i)?.translateToString(true).trim()) last = i;
+    term.resize(cols, last + 1);
+  }
+}, { chunks, cols: COLS });
 await page.waitForTimeout(300);
 await page.locator('.win').screenshot({ path: out });
 await browser.close();
