@@ -50,6 +50,18 @@ assert(members.checkRoot(merkleTreePathRoot<10, Bytes<32>>(disclose(path))), "no
 
 `allowlist.test.ts` includes that attack as a test.
 
+## Tested, not asserted
+
+| | |
+|---|---|
+| `contract/allowlist.test.ts` | 7 tests against the Compact circuit simulator: operator-only membership, admission, one claim per member, non-members refused, the borrowed-path attack refused, historic roots |
+| `test/e2e/allowlist.e2e.test.ts` | 3 tests on a real `undeployed` chain with AetherDust in the loop: **a member holding 0 NIGHT / 0 DUST is admitted with the sponsor paying**, a second admission is refused by the spent nullifier, and a stranger is refused by the circuit before AetherDust is ever asked |
+
+```bash
+pnpm test                                   # the circuit tests
+AETHERDUST_E2E=1 pnpm vitest run --project e2e test/e2e/allowlist.e2e.test.ts
+```
+
 ## The contract
 
 [`contract/src/allowlist.compact`](contract/src/allowlist.compact) — two circuits:
