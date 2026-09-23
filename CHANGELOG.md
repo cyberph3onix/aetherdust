@@ -28,7 +28,8 @@ confirmed on **preprod** — contract `e244010266d63c97dd9aac01231281cb75eaa2a21
 
 ### SDK and example
 - `@aetherdust/client`: REST client, `createSponsoredMidnightProvider` for midnight-js, typed `AetherDustError`.
-- `examples/example-dapp`: a browser counter DApp using Lace.
+- `examples/example-dapp`: a browser counter DApp using Lace. (Renamed and rebuilt after v0.1.0 as
+  `examples/allowlist-dapp` — Private Allowlist Access.)
 
 ### Dashboard and observability
 - Operator dashboard (nginx image, `:8090`): overview, requests with audit trails, usage breakdowns, a policy editor

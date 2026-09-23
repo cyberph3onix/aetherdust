@@ -7,7 +7,8 @@ export default defineConfig({
       {
         test: {
           name: 'unit',
-          include: ['packages/*/src/**/*.test.ts'],
+          // the Compact contract's tests live beside the contract they exercise
+          include: ['packages/*/src/**/*.test.ts', 'examples/*/contract/**/*.test.ts'],
           exclude: ['**/*.integration.test.ts'],
         },
       },

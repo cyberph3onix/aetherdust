@@ -1,0 +1,75 @@
+// Private Allowlist Access.
+//
+// An operator publishes an allowlist as a Merkle tree of *commitments*. A member proves, in zero knowledge, that
+// they hold a secret whose commitment is in that tree — and gains access — without revealing which member they are.
+// The chain learns that *someone* on the list claimed access, and nothing more.
+//
+// Public (on the ledger, visible to everyone):
+//   members     the Merkle tree of member commitments, and every root it has ever had
+//   nullifiers  one entry per claim, so a member cannot claim twice
+//   admissions  how many claims have succeeded
+//   owner       commitment to the operator's secret — who may extend the allowlist
+//
+// Private (witnesses, never sent anywhere):
+//   localSecret()  the caller's secret: a member's, or the operator's when extending the list
+//   memberPath()   the Merkle path proving that secret's commitment is a leaf of `members`
+//
+// Deliberate disclosures (`disclose()`), each one a value we accept becoming public:
+//   - the Merkle *path* in claimAccess: sibling hashes and directions. It reveals a position in the tree, not an
+//     identity, and the leaf it authenticates is checked in-circuit against the caller's own secret.
+//   - the *nullifier*: a hash of the secret under a fixed domain. Unlinkable to the secret, but stable per member,
+//     which is exactly what makes "one claim each" enforceable.
+//   - the allowlist entries and the owner commitment, which are public inputs by design.
+
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+/// Allowlist of member commitments. Historic, so a path proved against an older root stays valid after the
+/// operator adds more members — a member's proof cannot be invalidated by someone else joining.
+export ledger members: HistoricMerkleTree<10, Bytes<32>>;
+
+/// Spent nullifiers: the public record of "this member has claimed", with no way back to who they are.
+export ledger nullifiers: Set<Bytes<32>>;
+
+/// How many members have claimed access. The verifiable tally.
+export ledger admissions: Counter;
+
+/// persistentHash of the operator's secret. Only someone who can reproduce it may extend the allowlist.
+export ledger owner: Bytes<32>;
+
+/// The caller's secret. For `addMember` it is the operator's; for `claimAccess` it is the member's.
+witness localSecret(): Bytes<32>;
+
+/// The Merkle path authenticating the caller's commitment against `members`.
+witness memberPath(): MerkleTreePath<10, Bytes<32>>;
+
+constructor(ownerCommitment: Bytes<32>) {
+  owner = disclose(ownerCommitment);
+}
+
+/// Operator-only: add a member commitment to the allowlist.
+/// The operator proves knowledge of the secret behind `owner` rather than signing, so nothing about the operator
+/// goes on chain beyond the commitment fixed at deployment.
+export circuit addMember(commitment: Bytes<32>): [] {
+  assert(persistentHash<Bytes<32>>(localSecret()) == owner, "not the allowlist owner");
+  members.insert(disclose(commitment));
+}
+
+/// Prove membership and claim access, once.
+export circuit claimAccess(): [] {
+  const secret = localSecret();
+  const path = memberPath();
+
+  // Bind the path to *this* caller's commitment before trusting it. Without this the witness could supply any
+  // valid path from the public tree and claim on behalf of a member it does not control.
+  assert(path.leaf == persistentHash<Bytes<32>>(secret), "path is not for this member");
+  assert(members.checkRoot(merkleTreePathRoot<10, Bytes<32>>(disclose(path))), "not on the allowlist");
+
+  // Domain-separated so this nullifier cannot collide with one derived from the same secret elsewhere.
+  const nullifier = persistentHash<Vector<2, Bytes<32>>>([secret, pad(32, "allowlist:access:v1")]);
+  assert(!nullifiers.member(disclose(nullifier)), "this member has already claimed");
+
+  nullifiers.insert(disclose(nullifier));
+  admissions.increment(1);
+}

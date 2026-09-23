@@ -1,22 +1,42 @@
-# AetherDust
+# AetherDust — and Private Allowlist Access
 
-**Self-hostable DUST sponsorship control plane for Midnight DApps.** The user signs, the DApp asks, AetherDust enforces
-policy/budgets/limits, the sponsor wallet pays the DUST, Midnight settles. No user keys ever touch AetherDust.
+Two things live in this repository, and the second is what the first exists for.
+
+**[Private Allowlist Access](examples/allowlist-dapp)** is a privacy dApp on Midnight: prove you are on an
+allowlist without revealing which member you are. The list is public; your place on it is not. Written in Compact,
+with a private witness, a Merkle membership proof and a domain-separated nullifier so each member is admitted
+exactly once.
+
+**AetherDust** is the infrastructure underneath it: a self-hostable DUST sponsorship control plane. The user signs,
+the DApp asks, AetherDust enforces policy, budgets and limits, and a sponsor wallet pays the DUST. That is what
+lets someone prove membership from a wallet holding **0 NIGHT and 0 DUST** — no tokens, no faucet, no onboarding.
 
 ```
-User (Lace, payFees:false) ─signed tx─▶ DApp ─POST /v1/sponsorship/requests─▶ AetherDust api ──▶ Postgres ◀── worker (sponsor wallet) ──▶ Midnight
-                                                                                 auth · rate limit · inspect · policy · fee · budget          balance DUST · prove · merge · submit · confirm
+member (Lace, payFees:false) ─signed tx─▶ DApp ─POST /v1/sponsorship/requests─▶ AetherDust api ──▶ Postgres ◀── worker (sponsor wallet) ──▶ Midnight
+     proves membership in ZK                                                       auth · policy · budget           balance DUST · prove · merge · submit
 ```
 
-Status: **Phase 4 complete** — the operator dashboard (overview, requests + audit trail, usage, policy editor with a
-dry run, API keys, wallet) and Prometheus `/metrics` on both processes. Phase 3 put a Lace wallet holding 0 NIGHT /
-0 DUST through a contract call sponsored and confirmed on **preprod** (`@aetherdust/client` +
-`createSponsoredMidnightProvider`, Lace honouring `payFees:false`); the control plane, the real sponsor worker and the
-e2e suite on a local `undeployed` chain were proven in Phases 1–2. The mock sponsor remains for development.
-Phase 5 is essentially done (§0.6): docs, the security pass, the load test, the version-pin review and the
-recorded preprod run — a Lace wallet with 0 NIGHT / 0 DUST calling `counter.increment`, sponsored for
-0.000001000000001 DUST in block 2657441 — with only the `v0.1.0` tag outstanding. Plan: [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md); the flow was first proven in
-[`spikes/sponsor-spike/SPIKE_REPORT.md`](spikes/sponsor-spike/SPIKE_REPORT.md).
+## Privacy model (the dApp)
+
+| | |
+|---|---|
+| **Public ledger state** | `members` — a `HistoricMerkleTree` of member commitments; `nullifiers` — one per admission; `admissions` — the tally; `owner` — a commitment to the operator's secret |
+| **Private witnesses** | `localSecret()` — the caller's 32-byte secret; `memberPath()` — the Merkle path for its commitment. Neither leaves the member's machine |
+| **`disclose()`** | exactly three, each commented in the source: the Merkle **path** (a position, not an identity), the **nullifier** (a domain-separated hash of the secret), and the public arguments — a member's commitment and the owner commitment |
+| **An observer learns** | that *a* member of this list was admitted, when, and that the sponsor paid the fee |
+| **An observer cannot learn** | your secret, which entry is yours, which admission was yours, or whether two admissions are related |
+
+Full detail, including the witness-supplied-path attack the contract defends against:
+[`examples/allowlist-dapp/README.md`](examples/allowlist-dapp/README.md).
+
+## Status
+
+- **The dApp**: contract compiles with `compact compile`; 7 tests against the circuit simulator; deployed on
+  Midnight preprod (address below); browser DApp with Lace connect/disconnect and gasless admission.
+- **AetherDust**: **v0.1.0**, all six phases complete — a Lace wallet with 0 NIGHT / 0 DUST had a contract call
+  sponsored and confirmed on preprod for 0.000001000000001 DUST in block 2657441
+  ([changelog](CHANGELOG.md), plan [§0.6](IMPLEMENTATION_PLAN.md)). The flow was first proven in
+  [`spikes/sponsor-spike/SPIKE_REPORT.md`](spikes/sponsor-spike/SPIKE_REPORT.md).
 
 **Docs:** [changelog](CHANGELOG.md) · [quickstart](docs/quickstart.md) · [integration guide](docs/integration.md) · [policy reference](docs/policy.md) ·
 [runbooks](docs/runbooks.md) · [observability](docs/observability.md) · [threat model](docs/threat-model.md)
@@ -108,7 +128,7 @@ const r = await client.sponsor({ requestId: 'dapp:user-42:claim:7', transaction:
 `sponsor()` long-polls then polls until the request is `confirmed` (or throws a typed `AetherDustError` with `code`,
 `retryable`, `rejectedByPolicy`, `retryAfterSeconds`, and the persisted `request` for rejections). `until: 'approved'`
 returns as soon as the request is queued; the user's own transaction identifier survives the merge and can be watched
-right away. The example DApp is in [`examples/example-dapp`](examples/example-dapp) (runbook for the Lace check inside).
+right away. The DApp that uses all of this is [`examples/allowlist-dapp`](examples/allowlist-dapp).
 
 ## Integration in three calls
 
@@ -168,7 +188,7 @@ on restart the worker drains those first, then resumes.
 | `apps/dashboard` | operator dashboard (React + Vite): overview, requests, usage, policy editor + dry run, API keys, wallet |
 | `deploy/` | Dockerfile, compose, `.env.example` |
 | `packages/client` | `@aetherdust/client`: REST client + connector-backed midnight-js providers, typed errors |
-| `examples/example-dapp` | Vite counter DApp: Lace (`payFees:false`) + AetherDust; `deploy-counter` script; V7 runbook |
+| `examples/allowlist-dapp` | **Private Allowlist Access**: the Compact contract + its tests, and the browser DApp (Lace `payFees:false` + AetherDust) |
 | `test/e2e` | real-chain e2e: user wallet (0 NIGHT/0 DUST) + counter contract → api → worker → confirmed; the SDK over a connector-shaped wallet |
 | `test/smoke` | one-process stack with seeded traffic + the Playwright dashboard smoke test |
 | `spikes/sponsor-spike` | Phase 0: the live proof of DUST sponsorship on Midnight (+ `deploy/native/stack.sh` to run the chain without Docker) |

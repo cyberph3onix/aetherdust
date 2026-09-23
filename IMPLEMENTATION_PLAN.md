@@ -1,6 +1,6 @@
 # AetherDust — MVP Implementation Plan
 
-**Status:** v1.7 (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; Phase 3 — §0.4; Phase 4 — §0.5; **Phase 5 in progress (hardening; docs, security, load, pins done — release pending)** — §0.6) · **Date:** 2026-09-22 · **Source spec:** `prd.md` v1.0
+**Status:** v1.8 — **MVP complete, tagged `v0.1.0`** (Phase 0 — §0.1; Phase 1 — §0.2; Phase 2 — §0.3; Phase 3 — §0.4; Phase 4 — §0.5; Phase 5 — §0.6) · **Date:** 2026-09-23 · **Source spec:** `prd.md` v1.0
 **Scope of this document:** architecture + phased build plan. No implementation code.
 
 ---
@@ -167,7 +167,7 @@ there is no utility-class build step), a 40-line hash router instead of a routin
 (the tables are plain `<table>`s with server-side filters). Known cost: the bundle is 651 kB (192 kB gzipped),
 almost all React + Recharts — code-splitting is a Phase 5 nicety.
 
-### 0.6 Phase 5 progress (2026-09-22) — everything but the release
+### 0.6 Phase 5 outcome (2026-09-23) — hardening and release
 
 **Verification sweep (the whole matrix, against the Phase 4 code).** In-process e2e on a local `undeployed` chain:
 11 passed / 1 skipped (AC1–AC11, SDK, in-process kill-and-restart, reconciler, `SPONSOR_BALANCE_LOW`).
@@ -245,7 +245,9 @@ exactly the behaviour the floor is meant to produce, and they are left in rather
 `scripts/record-run.sh` regenerates the whole bundle (health, wallet, overview, `/metrics`, the request's audit
 trail) and `scripts/dashboard-shots.mjs` retakes the screenshots.
 
-**Left for the release:** the `v0.1.0` tag.
+**Released:** `v0.1.0` (commit `073333a`, 2026-09-23), notes in `CHANGELOG.md`. All twelve acceptance criteria are
+met: AC1–AC10 on a real chain in both e2e modes, AC11 twice (mock and on-chain), AC12 as a CI job on a clean
+machine.
 
 ## 1. Midnight research findings
 
@@ -379,7 +381,7 @@ aetherdust/
     client/         @aetherdust/client — TS SDK: MidnightProvider impl + REST client
     config/         zod-validated env schema shared by api/worker
   examples/
-    example-dapp/   counter-based DApp using Lace + @aetherdust/client
+    allowlist-dapp/ Private Allowlist Access: Compact contract + browser DApp using Lace + @aetherdust/client
   deploy/
     docker-compose.yml, docker-compose.local-midnight.yml (undeployed stack), Dockerfile
 ```
@@ -681,7 +683,7 @@ Deliverable: `spikes/sponsor-spike/` script + `SPIKE_REPORT.md`.
 - Admin endpoints, dashboard pages (overview, requests, policy editor, usage, api keys), Prometheus `/metrics` (PRD §25), structured logs with `request_id/transaction_id/application_id`, wallet snapshots.
 - **Testable:** AC11 (usage matches Postgres and on-chain fees), Playwright smoke.
 
-### Phase 5 — Hardening & self-host release · ~1 week — **docs, security, load and pins done (§0.6); release pending**
+### Phase 5 — Hardening & self-host release · ~1 week — **complete (§0.6)**
 - Docs: quickstart (mock → local → preprod), integration guide, policy reference, runbooks (fund wallet, register DUST, low balance, stuck requests, key rotation), threat model.
 - Security pass (§18 checklist), light load test, fresh-machine docker test in CI, version pin review (ledger v9 status), tagged `v0.1.0`.
 - **Testable:** AC12; full AC matrix green on `undeployed` and a recorded preprod run.

@@ -1,0 +1,226 @@
+/*
+ * Private Allowlist Access.
+ *
+ * The page is a door and a register. Two surfaces do all the work: the ruled register (what the chain records,
+ * public) and the raised card (what you hold, private). UV violet appears only on the private side and on the
+ * stamp — it is the light that reveals what is yours, so it is never spent on decoration.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  color-scheme: dark;
+
+  --ink: #17161c;          /* the page */
+  --ink-raised: #1f1d26;   /* the card you hold */
+  --ink-sunk: #131218;     /* the register's ruled ground */
+  --paper: #f2efe8;        /* primary text */
+  --muted: #a7a2b3;        /* secondary text — 8:1 on --ink */
+  --rule: rgba(242, 239, 232, 0.13);
+  --rule-strong: rgba(242, 239, 232, 0.28);
+
+  --uv: #8b6cff;           /* the private side, and the stamp */
+  --uv-sunk: rgba(139, 108, 255, 0.12);
+  --granted: #57d9a3;
+  --refused: #ff7a70;
+  --pending: #e8c06a;
+
+  --display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* 1.25 scale from 16 */
+  --t-xs: 0.8rem;
+  --t-sm: 0.875rem;
+  --t-base: 1rem;
+  --t-md: 1.25rem;
+  --t-lg: 1.5625rem;
+  --t-xl: 1.953rem;
+  --t-2xl: 2.441rem;
+
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 40px;
+  --space-5: 64px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: var(--t-base);
+  line-height: 1.5;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.015em; line-height: 1.15; }
+p { margin: 0; max-width: 62ch; }
+a { color: var(--uv); }
+
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.note { color: var(--muted); font-size: var(--t-sm); }
+
+/* ---------- masthead ---------- */
+.masthead {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--rule);
+  flex-wrap: wrap;
+}
+.wordmark { font-size: var(--t-md); font-weight: 600; letter-spacing: -0.02em; margin-right: auto; }
+.net {
+  font-family: var(--mono); font-size: var(--t-xs); color: var(--muted);
+  border: 1px solid var(--rule); border-radius: 2px; padding: 3px 8px;
+}
+.wallet-id { font-family: var(--mono); font-size: var(--t-xs); color: var(--muted); }
+
+/* ---------- the door ---------- */
+.door {
+  display: grid; grid-template-columns: 172px minmax(0, 1fr); gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-5) var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+.door h1 { font-size: var(--t-2xl); max-width: 18ch; }
+.door p { margin-top: var(--space-1); color: var(--muted); }
+
+/* the one bold thing on the page */
+.stamp { width: 172px; height: 172px; }
+.stamp .ring { fill: none; stroke: var(--rule-strong); stroke-width: 2; }
+.stamp .ring-inner { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 6; stroke-linecap: round; }
+.stamp .mark { fill: none; stroke: var(--rule-strong); stroke-width: 3.5; stroke-linecap: square; stroke-linejoin: miter; }
+.stamp .legend { fill: var(--muted); font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; }
+.stamp[data-state='granted'] { color: var(--granted); }
+.stamp[data-state='granted'] .ring,
+.stamp[data-state='granted'] .mark { stroke: var(--uv); }
+.stamp[data-state='granted'] .ring-inner { stroke: var(--uv); opacity: 0.5; }
+.stamp[data-state='granted'] .legend { fill: var(--uv); }
+.stamp[data-state='granted'] .disc { fill: var(--uv-sunk); }
+.stamp[data-state='refused'] .ring, .stamp[data-state='refused'] .mark { stroke: var(--refused); }
+.stamp[data-state='refused'] .legend { fill: var(--refused); }
+
+/* the single orchestrated moment: the stamp landing */
+.stamp[data-state='granted'] { animation: press 420ms cubic-bezier(0.2, 0.9, 0.3, 1.4) both; }
+@keyframes press {
+  0% { transform: scale(1.5) rotate(9deg); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: scale(1) rotate(-5deg); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp[data-state='granted'] { animation: none; transform: rotate(-5deg); }
+  * { transition-duration: 1ms !important; }
+}
+
+/* the flow is genuinely a sequence, so it is numbered by name, not by 01/02/03 */
+.steps { list-style: none; display: flex; gap: var(--space-2); margin: var(--space-3) 0 0; padding: 0; flex-wrap: wrap; }
+.steps li { display: flex; align-items: center; gap: var(--space-1); color: var(--muted); font-size: var(--t-sm); }
+.steps li::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  border: 1px solid var(--rule-strong); flex: none;
+}
+.steps li[data-done='true'] { color: var(--paper); }
+.steps li[data-done='true']::before { background: var(--uv); border-color: var(--uv); }
+
+/* ---------- the spread: your side | the public record ---------- */
+.spread {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 1px; background: var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.spread > section { padding: var(--space-4) var(--space-3); }
+
+.yours { background: var(--ink-raised); }
+.record { background: var(--ink-sunk); }
+
+.spread h2 { font-size: var(--t-md); }
+.spread > section > .note { margin-top: 4px; }
+
+/* a register: ruled rows, label left, value right, tabular figures */
+.entries { margin: var(--space-3) 0 0; display: grid; }
+.entries div { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); padding: 10px 0; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+.entries dd { flex: 0 1 auto; display: flex; align-items: baseline; gap: var(--space-1); justify-content: flex-end; }
+.entries dt { color: var(--muted); font-size: var(--t-sm); }
+.entries dd { margin: 0; font-family: var(--mono); font-size: var(--t-sm); text-align: right; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .actions button { flex: 1 1 100%; } .actions { gap: var(--space-1); } }
+.entries .figure { font-family: var(--display); font-size: var(--t-lg); font-weight: 600; line-height: 1; }
+.entries .figure[data-empty='true'] { font-size: var(--t-base); font-weight: 400; color: var(--muted); }
+
+.verdict { font-weight: 600; }
+.verdict[data-v='yes'] { color: var(--granted); }
+.verdict[data-v='no'] { color: var(--refused); }
+.verdict[data-v='unknown'] { color: var(--muted); }
+
+/* the stamps the chain holds */
+.stamps { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.stamps li {
+  display: flex; align-items: center; gap: var(--space-1);
+  font-family: var(--mono); font-size: var(--t-xs); color: var(--muted);
+}
+.stamps li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--uv); opacity: 0.55; flex: none; }
+.stamps li[data-mine='true'] { color: var(--uv); }
+.stamps li[data-mine='true']::before { opacity: 1; }
+
+/* ---------- actions ---------- */
+.actions { display: flex; gap: var(--space-1); flex-wrap: wrap; margin-top: var(--space-3); }
+button {
+  font: inherit; font-weight: 500; color: var(--paper); cursor: pointer;
+  background: transparent; border: 1px solid var(--rule-strong); border-radius: 2px;
+  padding: 11px 18px; min-height: 44px;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+button:hover:not(:disabled) { border-color: var(--paper); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+button.primary { background: var(--uv); border-color: var(--uv); color: #120e26; font-weight: 600; }
+/* a disabled primary is not the primary action — drop it to the quiet treatment rather than dimming the fill */
+button.primary:disabled { background: transparent; border-color: var(--rule); color: var(--muted); font-weight: 500; }
+button.primary:hover:not(:disabled) { background: #9d83ff; border-color: #9d83ff; }
+button.quiet { border-color: transparent; color: var(--muted); padding-inline: 10px; }
+button.quiet:hover:not(:disabled) { color: var(--paper); border-color: var(--rule); }
+:focus-visible { outline: 2px solid var(--uv); outline-offset: 2px; }
+
+/* ---------- what an observer learns ---------- */
+.observer { padding: var(--space-4) var(--space-3); border-bottom: 1px solid var(--rule); }
+.observer .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-3); margin-top: var(--space-2); }
+.observer ul { margin: var(--space-1) 0 0; padding-left: 1.1rem; color: var(--muted); font-size: var(--t-sm); }
+.observer li { margin: 4px 0; }
+.observer li strong { color: var(--paper); font-weight: 500; }
+.observer h3 { font-size: var(--t-base); }
+.observer .sees h3 { color: var(--paper); }
+.observer .hidden-h3 h3 { color: var(--uv); }
+
+/* ---------- settings + log ---------- */
+.settings { padding: var(--space-3); border-bottom: 1px solid var(--rule); }
+.settings summary { cursor: pointer; color: var(--muted); font-size: var(--t-sm); }
+.settings summary:hover { color: var(--paper); }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-2); margin-top: var(--space-3); }
+label { display: block; font-size: var(--t-xs); color: var(--muted); }
+input {
+  width: 100%; margin-top: 5px; padding: 10px 12px; min-height: 44px;
+  font-family: var(--mono); font-size: var(--t-sm);
+  color: var(--paper); background: var(--ink); border: 1px solid var(--rule); border-radius: 2px;
+}
+input:hover { border-color: var(--rule-strong); }
+
+.activity { padding: var(--space-3); }
+.activity h2 { font-size: var(--t-sm); color: var(--muted); font-weight: 500; }
+#log { margin-top: var(--space-2); font-family: var(--mono); font-size: var(--t-xs); line-height: 1.7; max-height: 260px; overflow-y: auto; }
+#log div { color: var(--muted); }
+#log .ok { color: var(--granted); }
+#log .bad { color: var(--refused); }
+#log time { color: var(--rule-strong); margin-right: 10px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .spread { grid-template-columns: 1fr; }
+  .door { grid-template-columns: 116px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4) var(--space-3); }
+  .stamp { width: 116px; height: 116px; }
+  .door h1 { font-size: var(--t-xl); }
+}
+@media (max-width: 520px) {
+  .door { grid-template-columns: 1fr; }
+  .masthead { padding: var(--space-2); }
+  .spread > section, .observer, .settings, .activity { padding-inline: var(--space-2); }
+}

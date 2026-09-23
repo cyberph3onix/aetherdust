@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Private Allowlist Access</title>
+  <meta name="description" content="Prove you are on an allowlist without revealing which member you are. Built on Midnight; the transaction fee is sponsored, so a wallet holding nothing can still get through the door." />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <header class="masthead">
+    <span class="wordmark">Private Allowlist Access</span>
+    <span class="net mono" id="net-badge">preprod</span>
+    <span class="wallet-id" id="wallet-id">no wallet</span>
+    <button id="wallet-btn">Connect wallet</button>
+  </header>
+
+  <main>
+    <section class="door" aria-labelledby="door-heading">
+      <svg class="stamp" id="stamp" viewBox="0 0 120 120" role="img" aria-labelledby="stamp-title">
+        <title id="stamp-title">Admission stamp</title>
+        <circle class="disc" cx="60" cy="60" r="54" fill="none" />
+        <circle class="ring" cx="60" cy="60" r="54" />
+        <circle class="ring-inner" cx="60" cy="60" r="45" />
+        <path id="stamp-arc" d="M60,60 m-36,0 a36,36 0 1,1 72,0 a36,36 0 1,1 -72,0" fill="none" />
+        <text class="legend"><textPath href="#stamp-arc" startOffset="2%" id="stamp-legend">MEMBER · UNPROVEN · MEMBER · UNPROVEN · </textPath></text>
+        <path class="mark" id="stamp-mark" d="M44 61 L55 72 L77 50" style="display:none" />
+        <path class="mark" id="stamp-empty" d="M46 60 L74 60" />
+      </svg>
+
+      <div>
+        <h1 id="door-heading">Prove you belong here. Stay anonymous.</h1>
+        <p id="door-sub">
+          The list is public. Your place on it is not. Prove you hold a secret behind one of its entries,
+          and the door opens without the chain learning which entry was yours.
+        </p>
+        <ol class="steps" id="steps">
+          <li data-step="wallet" data-done="false">Connect a wallet</li>
+          <li data-step="member" data-done="false">Hold a listed secret</li>
+          <li data-step="entered" data-done="false">Enter, fee sponsored</li>
+        </ol>
+      </div>
+    </section>
+
+    <div class="spread">
+      <section class="yours" aria-labelledby="yours-heading">
+        <h2 id="yours-heading">Your side</h2>
+        <p class="note">Kept in this browser. Never sent to the chain, the sponsor, or anyone else.</p>
+
+        <dl class="entries">
+          <div>
+            <dt>Your secret</dt>
+            <dd><span id="secret" class="mono">—</span> <button class="quiet" id="reveal" aria-pressed="false">Reveal</button></dd>
+          </div>
+          <div><dt>Your commitment <span class="note">(this is what the list holds)</span></dt><dd id="commitment">—</dd></div>
+          <div><dt>On the list</dt><dd><span class="verdict" id="listed" data-v="unknown">unknown</span></dd></div>
+          <div><dt>Already entered</dt><dd><span class="verdict" id="entered" data-v="unknown">unknown</span></dd></div>
+        </dl>
+
+        <div class="actions">
+          <button class="primary" id="claim" disabled>Prove membership and enter</button>
+          <button class="quiet" id="new-secret">New secret</button>
+        </div>
+        <p class="note" id="claim-status" role="status" aria-atomic="true" style="margin-top:var(--space-2)"></p>
+      </section>
+
+      <section class="record" aria-labelledby="record-heading">
+        <h2 id="record-heading">The public record</h2>
+        <p class="note">Everything anyone reading the chain can see about this allowlist.</p>
+
+        <dl class="entries">
+          <div><dt>Members on the list</dt><dd><span class="figure" id="members" data-empty="true">not read yet</span></dd></div>
+          <div><dt>Admissions granted</dt><dd><span class="figure" id="admissions" data-empty="true">not read yet</span></dd></div>
+          <div><dt>Contract</dt><dd id="contract-out">not set</dd></div>
+          <div><dt>Allowlist root</dt><dd id="root" class="note">not read yet</dd></div>
+        </dl>
+
+        <h3 class="note" style="margin-top:var(--space-3)">Stamps on the door</h3>
+        <ul class="stamps" id="stamps"><li class="note" style="color:var(--muted)">none yet</li></ul>
+        <p class="note" style="margin-top:var(--space-2)">
+          One per admission. Each proves a member came through; none of them says who.
+        </p>
+      </section>
+    </div>
+
+    <section class="observer" aria-labelledby="observer-heading">
+      <h2 id="observer-heading">What the chain learns</h2>
+      <div class="cols">
+        <div class="sees">
+          <h3>An observer can see</h3>
+          <ul>
+            <li>The <strong>commitments</strong> on the allowlist, and its Merkle root</li>
+            <li>That <strong>someone on the list</strong> was admitted, and when</li>
+            <li>One <strong>nullifier</strong> per admission, and the running tally</li>
+            <li>That the <strong>sponsor</strong> paid the fee, and how much DUST</li>
+          </ul>
+        </div>
+        <div class="hidden-h3">
+          <h3>An observer cannot see</h3>
+          <ul>
+            <li>Your <strong>secret</strong> — it never leaves this browser</li>
+            <li><strong>Which entry</strong> on the list is yours</li>
+            <li>Which admission was <strong>your</strong> admission</li>
+            <li>Whether two admissions came from <strong>related people</strong></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <details class="settings">
+      <summary>Connection settings</summary>
+      <div class="fields">
+        <label>Network <input id="network" placeholder="preprod" autocomplete="off" /></label>
+        <label>Allowlist contract (64 hex) <input id="contract" placeholder="deployed with pnpm deploy-contract" autocomplete="off" /></label>
+        <label>AetherDust API <input id="baseUrl" placeholder="http://localhost:8080" autocomplete="off" /></label>
+        <label>AetherDust API key <input id="apiKey" placeholder="ad_live_…" autocomplete="off" /></label>
+        <label>User id, pseudonymous <input id="userId" placeholder="demo-user-1" autocomplete="off" /></label>
+        <label>Proof server <input id="proofServer" placeholder="http://localhost:6300" autocomplete="off" /></label>
+        <label>Import a secret (64 hex) <input id="import-secret" placeholder="paste to replace the secret above" autocomplete="off" /></label>
+      </div>
+      <p class="note" style="margin-top:var(--space-2)">
+        The secret lives in this browser's local storage so the demo survives a reload. A real deployment would keep
+        it in the wallet or a password manager.
+      </p>
+    </details>
+
+    <section class="activity" aria-labelledby="activity-heading">
+      <h2 id="activity-heading">Activity</h2>
+      <div id="log"></div>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

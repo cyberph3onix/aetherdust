@@ -26,7 +26,18 @@ jobs:
       - run: pnpm audit --audit-level high
       - run: pnpm -r typecheck
       - run: pnpm build
-      - run: pnpm --filter @aetherdust/example-dapp build # the browser DApp must bundle (WASM, shims)
+      - name: compile the Compact contract and check the committed artifacts match
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          export PATH="$HOME/.compact/bin:$PATH"
+          compact update 0.31.1   # pinned: the committed artifacts below are byte-for-byte this compiler's output
+          compact compile examples/allowlist-dapp/contract/src/allowlist.compact /tmp/allowlist-ci
+          # the circuits and keys in the repo must be the ones this source produces
+          for f in keys/claimAccess.verifier keys/addMember.verifier zkir/claimAccess.bzkir zkir/addMember.bzkir; do
+            cmp "/tmp/allowlist-ci/$f" "examples/allowlist-dapp/contract/managed/allowlist/$f"
+          done
+      - run: pnpm --filter @aetherdust/allowlist-dapp build # the browser DApp must bundle (WASM, shims)
       - run: pnpm test
         env:
           AETHERDUST_TEST_DATABASE_URL: postgres://aetherdust:aetherdust@localhost:5432/aetherdust_test
