@@ -9,6 +9,7 @@
  *   4. someone who is not on the list cannot claim
  *   5. a member cannot borrow another member's Merkle path (the leaf is bound to the caller's own secret)
  *   6. adding members later does not invalidate a proof against an older root (HistoricMerkleTree)
+ *   7. what a claim publishes is exactly the Merkle root and the nullifier — never the path, commitment or secret
  */
 import { createCircuitContext, createConstructorContext, sampleContractAddress, type CircuitContext } from '@midnight-ntwrk/compact-runtime';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -41,8 +42,12 @@ class Participant {
     this.context = this.contract.impureCircuits.addMember(this.context, commitment).context;
     return this;
   }
+  /** The public transcript of the last call: every value it hands the chain. */
+  transcript: unknown[] = [];
   claimAccess() {
-    this.context = this.contract.impureCircuits.claimAccess(this.context).context;
+    const r = this.contract.impureCircuits.claimAccess(this.context);
+    this.context = r.context;
+    this.transcript = r.proofData.publicTranscript;
     return this;
   }
 }
@@ -139,5 +144,25 @@ describe('claiming access', () => {
     later.claimAccess();                                  // still admitted
     expect(later.ledger.admissions).toBe(1n);
     expect(later.ledger.members.checkRoot(rootWhenAliceJoined)).toBe(true);
+  });
+
+  it('publishes only the Merkle root and the nullifier — never the path, the commitment or the secret', () => {
+    admitted(ALICE, BOB, MALLORY);
+    const alice = new Participant(ALICE);
+    const path = alice.ledger.members.findPathForLeaf(commitmentFor(ALICE))!;
+    const root = alice.ledger.members.root();
+    alice.claimAccess();
+
+    // every value the transaction pushes onto the public transcript, as the chain will see it
+    const le = (n: bigint) => Buffer.from(n.toString(16).padStart(64, '0'), 'hex').reverse().toString('hex');
+    const pushed = alice.transcript
+      .flatMap((op: any) => (op?.push?.value?.tag === 'cell' ? op.push.value.content.value : []))
+      .map((v: Uint8Array) => Buffer.from(v).toString('hex').padEnd(64, '0'));
+    const hex = (b: Uint8Array) => Buffer.from(b).toString('hex');
+
+    expect(new Set(pushed)).toEqual(new Set([le(root.field), hex(nullifierFor(ALICE))]));
+    expect(pushed).not.toContain(hex(commitmentFor(ALICE)));   // which leaf is hers
+    expect(pushed).not.toContain(hex(ALICE));                  // her secret
+    for (const step of (path as any).path) expect(pushed).not.toContain(le(step.sibling.field)); // her position
   });
 });

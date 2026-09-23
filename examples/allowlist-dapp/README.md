@@ -24,18 +24,25 @@ addMember(commitment) ─────────▶  members: HistoricMerkleTre
 |---|---|
 | **Public ledger state** | `members` (a Merkle tree of commitments, with every root it has ever had), `nullifiers` (one per admission), `admissions` (the tally), `owner` (a commitment to the operator's secret) |
 | **Private witnesses** | `localSecret()` — the caller's 32-byte secret, and `memberPath()` — the Merkle path authenticating its commitment. Neither is ever transmitted; the circuit consumes them and proves a statement about them |
-| **Deliberately disclosed** | the Merkle **path** (sibling hashes — a position in the tree, not an identity), the **nullifier** (a domain-separated hash of the secret), and the public arguments: a member's commitment and the owner commitment |
+| **Deliberately disclosed** | the Merkle **root** the proof was made against (which version of the list — never the path, which would point at your leaf), the **nullifier** (a domain-separated hash of the secret), and the public arguments: a member's commitment when the operator adds it, and the owner commitment at deployment |
 
 **What an observer learns:** that a member of this allowlist was admitted, at a particular time, and that the
-sponsor paid the fee. The commitments and the tally are public by design.
+sponsor paid the fee; the nullifier; and which version of the list (Merkle root) the proof was made against. The
+commitments and the tally are public by design.
 
 **What an observer cannot learn:** your secret; which entry on the list is yours; which admission was yours;
 whether two admissions came from people who know each other. The nullifier is stable per member — that is what
 makes "one admission each" enforceable — but it is not linkable back to a commitment or a secret.
 
+**The one thing that narrows it:** the disclosed root. Because the tree is historic, a proof against an *older* root
+hides you among the members who were on the list at that point, not the whole list today. The DApp always proves
+against the current tree, so in practice your anonymity set is every member at the moment you claim.
+
 The compiler is what enforces this. Compact treats every witness-derived value, and every circuit parameter, as
-private until you write `disclose()`; the contract has exactly three such calls and each one is commented with
-what it gives away.
+private until you write `disclose()`. The contract has five such calls — the owner commitment, an added member's
+commitment, the Merkle root, and the nullifier (checked, then inserted) — each commented with what it gives away.
+A test reads the public transcript of a real `claimAccess` and checks it holds exactly the root and the nullifier:
+not the path, not the commitment, not the secret.
 
 ### The pitfall this contract avoids
 
@@ -45,7 +52,7 @@ therefore binds the path to the caller first:
 
 ```compact
 assert(path.leaf == persistentHash<Bytes<32>>(secret), "path is not for this member");
-assert(members.checkRoot(merkleTreePathRoot<10, Bytes<32>>(disclose(path))), "not on the allowlist");
+assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "not on the allowlist");
 ```
 
 `allowlist.test.ts` includes that attack as a test.
@@ -54,7 +61,7 @@ assert(members.checkRoot(merkleTreePathRoot<10, Bytes<32>>(disclose(path))), "no
 
 | | |
 |---|---|
-| `contract/allowlist.test.ts` | 7 tests against the Compact circuit simulator: operator-only membership, admission, one claim per member, non-members refused, the borrowed-path attack refused, historic roots |
+| `contract/allowlist.test.ts` | 8 tests against the Compact circuit simulator: operator-only membership, admission, one claim per member, non-members refused, the borrowed-path attack refused, historic roots, and the public transcript of a claim holding only the root and the nullifier |
 | `test/e2e/allowlist.e2e.test.ts` | 3 tests on a real `undeployed` chain with AetherDust in the loop: **a member holding 0 NIGHT / 0 DUST is admitted with the sponsor paying**, a second admission is refused by the spent nullifier, and a stranger is refused by the circuit before AetherDust is ever asked |
 
 ```bash
@@ -72,7 +79,7 @@ AETHERDUST_E2E=1 pnpm vitest run --project e2e test/e2e/allowlist.e2e.test.ts
 
 ```bash
 pnpm compile      # compact compile → contract/managed/allowlist (circuits, prover/verifier keys)
-pnpm test         # 7 tests against the circuit simulator
+pnpm test         # 8 tests against the circuit simulator
 ```
 
 ![compact compile output](../../docs/images/compact-compile.png)

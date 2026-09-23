@@ -22,8 +22,8 @@ member (Lace, payFees:false) ─signed tx─▶ DApp ─POST /v1/sponsorship/req
 |---|---|
 | **Public ledger state** | `members` — a `HistoricMerkleTree` of member commitments; `nullifiers` — one per admission; `admissions` — the tally; `owner` — a commitment to the operator's secret |
 | **Private witnesses** | `localSecret()` — the caller's 32-byte secret; `memberPath()` — the Merkle path for its commitment. Neither leaves the member's machine |
-| **`disclose()`** | exactly three, each commented in the source: the Merkle **path** (a position, not an identity), the **nullifier** (a domain-separated hash of the secret), and the public arguments — a member's commitment and the owner commitment |
-| **An observer learns** | that *a* member of this list was admitted, when, and that the sponsor paid the fee |
+| **`disclose()`** | five calls, each commented in the source: the Merkle **root** the proof used (never the path — that would point at your leaf), the **nullifier** (a domain-separated hash of the secret), and the public arguments — a member's commitment and the owner commitment |
+| **An observer learns** | that *a* member of this list was admitted, when, that the sponsor paid the fee, and which version of the list (root) the proof used |
 | **An observer cannot learn** | your secret, which entry is yours, which admission was yours, or whether two admissions are related |
 
 Full detail, including the witness-supplied-path attack the contract defends against:
@@ -37,13 +37,13 @@ Full detail, including the witness-supplied-path attack the contract defends aga
 | Preprod contract | _pending deployment (`pnpm deploy-contract setup 3`)_ |
 | Contract source | [`examples/allowlist-dapp/contract/src/allowlist.compact`](examples/allowlist-dapp/contract/src/allowlist.compact) |
 | Circuits + keys | [`contract/managed/allowlist`](examples/allowlist-dapp/contract/managed/allowlist) — CI recompiles and checks these byte-for-byte |
-| Tests | 7 circuit tests + 3 gasless e2e tests on a real chain; 113 across the repo ([evidence](examples/allowlist-dapp/README.md#tested-not-asserted)) |
+| Tests | 8 circuit tests + 3 gasless e2e tests on a real chain; 113 across the repo ([evidence](examples/allowlist-dapp/README.md#tested-not-asserted)) |
 | CI | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — compiles the contract, runs every suite, builds the images, walks the Docker quickstart |
 | Demo video | _pending — [script](docs/demo-script.md)_ |
 
 ## Status
 
-- **The dApp**: contract compiles with `compact compile`; 7 tests against the circuit simulator and 3 gasless
+- **The dApp**: contract compiles with `compact compile`; 8 tests against the circuit simulator and 3 gasless
   end-to-end tests on a real chain; browser DApp with Lace connect/disconnect and sponsored admission.
 - **AetherDust**: **v0.1.0**, all six phases complete — a Lace wallet with 0 NIGHT / 0 DUST had a contract call
   sponsored and confirmed on preprod for 0.000001000000001 DUST in block 2657441

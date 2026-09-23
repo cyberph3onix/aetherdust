@@ -10,7 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --project unit contract/allowlist.test.ts",
+    "test": "vitest run --root ../.. --project unit examples/allowlist-dapp/contract/allowlist.test.ts",
     "deploy-contract": "tsx --conditions=development deploy.ts"
   },
   "dependencies": {

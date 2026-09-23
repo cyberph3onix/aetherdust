@@ -15,8 +15,9 @@
 //   memberPath()   the Merkle path proving that secret's commitment is a leaf of `members`
 //
 // Deliberate disclosures (`disclose()`), each one a value we accept becoming public:
-//   - the Merkle *path* in claimAccess: sibling hashes and directions. It reveals a position in the tree, not an
-//     identity, and the leaf it authenticates is checked in-circuit against the caller's own secret.
+//   - the Merkle *root* in claimAccess: which version of the allowlist the proof was made against. Never the path
+//     itself — the path carries the caller's own leaf, so disclosing it would say which member they are. Because
+//     the tree is historic, a proof against an older root hides the caller only among the members present then.
 //   - the *nullifier*: a hash of the secret under a fixed domain. Unlinkable to the secret, but stable per member,
 //     which is exactly what makes "one claim each" enforceable.
 //   - the allowlist entries and the owner commitment, which are public inputs by design.
@@ -64,7 +65,9 @@ export circuit claimAccess(): [] {
   // Bind the path to *this* caller's commitment before trusting it. Without this the witness could supply any
   // valid path from the public tree and claim on behalf of a member it does not control.
   assert(path.leaf == persistentHash<Bytes<32>>(secret), "path is not for this member");
-  assert(members.checkRoot(merkleTreePathRoot<10, Bytes<32>>(disclose(path))), "not on the allowlist");
+  // Only the root is disclosed: the path carries our leaf (our commitment), so it stays private. The root does
+  // become public — it says which version of the list we proved against, which is the anonymity set.
+  assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "not on the allowlist");
 
   // Domain-separated so this nullifier cannot collide with one derived from the same secret elsewhere.
   const nullifier = persistentHash<Vector<2, Bytes<32>>>([secret, pad(32, "allowlist:access:v1")]);

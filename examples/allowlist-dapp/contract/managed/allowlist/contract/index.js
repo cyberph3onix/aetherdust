@@ -151,14 +151,14 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('addMember',
                                      'argument 1 (as invoked from Typescript)',
-                                     'allowlist.compact line 54 char 1',
+                                     'allowlist.compact line 55 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
         if (!(commitment_0.buffer instanceof ArrayBuffer && commitment_0.BYTES_PER_ELEMENT === 1 && commitment_0.length === 32)) {
           __compactRuntime.typeError('addMember',
                                      'argument 1 (argument 2 as invoked from Typescript)',
-                                     'allowlist.compact line 54 char 1',
+                                     'allowlist.compact line 55 char 1',
                                      'Bytes<32>',
                                      commitment_0)
         }
@@ -186,7 +186,7 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('claimAccess',
                                      'argument 1 (as invoked from Typescript)',
-                                     'allowlist.compact line 60 char 1',
+                                     'allowlist.compact line 61 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
@@ -232,7 +232,7 @@ export class Contract {
     if (!(ownerCommitment_0.buffer instanceof ArrayBuffer && ownerCommitment_0.BYTES_PER_ELEMENT === 1 && ownerCommitment_0.length === 32)) {
       __compactRuntime.typeError('Contract state constructor',
                                  'argument 1 (argument 2 as invoked from Typescript)',
-                                 'allowlist.compact line 47 char 1',
+                                 'allowlist.compact line 48 char 1',
                                  'Bytes<32>',
                                  ownerCommitment_0)
     }
@@ -377,7 +377,7 @@ export class Contract {
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 32)) {
       __compactRuntime.typeError('localSecret',
                                  'return value',
-                                 'allowlist.compact line 42 char 1',
+                                 'allowlist.compact line 43 char 1',
                                  'Bytes<32>',
                                  result_0)
     }
@@ -394,7 +394,7 @@ export class Contract {
     if (!(typeof(result_0) === 'object' && result_0.leaf.buffer instanceof ArrayBuffer && result_0.leaf.BYTES_PER_ELEMENT === 1 && result_0.leaf.length === 32 && Array.isArray(result_0.path) && result_0.path.length === 10 && result_0.path.every((t) => typeof(t) === 'object' && typeof(t.sibling) === 'object' && typeof(t.sibling.field) === 'bigint' && t.sibling.field >= 0 && t.sibling.field <= __compactRuntime.MAX_FIELD && typeof(t.goes_left) === 'boolean'))) {
       __compactRuntime.typeError('memberPath',
                                  'return value',
-                                 'allowlist.compact line 45 char 1',
+                                 'allowlist.compact line 46 char 1',
                                  'struct MerkleTreePath<leaf: Bytes<32>, path: Vector<10, struct MerkleTreePathEntry<sibling: struct MerkleTreeDigest<field: Field>, goes_left: Boolean>>>',
                                  result_0)
     }
@@ -625,7 +625,7 @@ export function ledger(stateOrChargedState) {
         if (!(typeof(rt_0) === 'object' && typeof(rt_0.field) === 'bigint' && rt_0.field >= 0 && rt_0.field <= __compactRuntime.MAX_FIELD)) {
           __compactRuntime.typeError('checkRoot',
                                      'argument 1',
-                                     'allowlist.compact line 30 char 1',
+                                     'allowlist.compact line 31 char 1',
                                      'struct MerkleTreeDigest<field: Field>',
                                      rt_0)
         }
@@ -675,14 +675,14 @@ export function ledger(stateOrChargedState) {
         if (!(typeof(index_0) === 'bigint' && index_0 >= 0 && index_0 <= __compactRuntime.MAX_FIELD)) {
           __compactRuntime.typeError('path_for_leaf',
                                      'argument 1',
-                                     'allowlist.compact line 30 char 1',
+                                     'allowlist.compact line 31 char 1',
                                      'Field',
                                      index_0)
         }
         if (!(leaf_0.buffer instanceof ArrayBuffer && leaf_0.BYTES_PER_ELEMENT === 1 && leaf_0.length === 32)) {
           __compactRuntime.typeError('path_for_leaf',
                                      'argument 2',
-                                     'allowlist.compact line 30 char 1',
+                                     'allowlist.compact line 31 char 1',
                                      'Bytes<32>',
                                      leaf_0)
         }
@@ -697,7 +697,7 @@ export function ledger(stateOrChargedState) {
         if (!(leaf_0.buffer instanceof ArrayBuffer && leaf_0.BYTES_PER_ELEMENT === 1 && leaf_0.length === 32)) {
           __compactRuntime.typeError('find_path_for_leaf',
                                      'argument 1',
-                                     'allowlist.compact line 30 char 1',
+                                     'allowlist.compact line 31 char 1',
                                      'Bytes<32>',
                                      leaf_0)
         }
@@ -761,7 +761,7 @@ export function ledger(stateOrChargedState) {
         if (!(elem_0.buffer instanceof ArrayBuffer && elem_0.BYTES_PER_ELEMENT === 1 && elem_0.length === 32)) {
           __compactRuntime.typeError('member',
                                      'argument 1',
-                                     'allowlist.compact line 33 char 1',
+                                     'allowlist.compact line 34 char 1',
                                      'Bytes<32>',
                                      elem_0)
         }
