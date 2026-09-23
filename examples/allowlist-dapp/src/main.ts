@@ -69,7 +69,8 @@ const indexer = () => {
   if (configured) return { url: configured, ws: configured.replace(/^http/, 'ws').replace(/\/graphql\/?$/, '/graphql/ws') };
   return defaultIndexer(network());
 };
-const publicData = () => indexerPublicDataProvider(indexer().url, indexer().ws);
+// the provider's default WebSocket comes from isomorphic-ws, which has no named export in a browser bundle
+const publicData = () => indexerPublicDataProvider(indexer().url, indexer().ws, globalThis.WebSocket as any);
 
 // ---------- the secret (private state, this browser only) ----------
 const SECRET_KEY = 'allowlist.secret';
@@ -168,9 +169,23 @@ const disconnect = async () => {
 
 $('wallet-btn').addEventListener('click', async () => {
   const btn = $<HTMLButtonElement>('wallet-btn');
+  const label = btn.textContent;
   btn.disabled = true;
-  try { connected ? await disconnect() : await connect(); } catch (e) { log(`connect failed: ${(e as Error).message}`, 'bad'); } finally { btn.disabled = false; }
+  if (!connected) btn.textContent = 'Check your wallet…'; // the wallet's approval prompt can open behind this window
+  try {
+    connected ? await disconnect() : await connect();
+  } catch (e) {
+    log(`connect failed: ${(e as Error).message}`, 'bad');
+    $('wallet-id').textContent = 'connect failed — see Activity';
+    btn.textContent = label ?? 'Connect wallet';
+  } finally { btn.disabled = false; }
 });
+
+// a page with no wallet extension should say so before anything is clicked, not only in the log at the bottom
+if (wallets().length === 0) {
+  $('wallet-id').textContent = 'no wallet extension detected';
+  $('wallet-btn').title = 'No Midnight wallet is exposing itself to this page. Install Lace, unlock it, enable it for this site, then reload.';
+}
 
 // ---------- reading the public record ----------
 // the ZK assets are served beside the page, so they must respect the deployment's base path (a GitHub Pages

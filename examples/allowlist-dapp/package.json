@@ -5,7 +5,8 @@
   "description": "Private Allowlist Access \u2014 prove membership without revealing identity, with the DUST fee sponsored by AetherDust.",
   "type": "module",
   "scripts": {
-    "compile": "compact compile contract/src/allowlist.compact contract/managed/allowlist",
+    "compile": "compact compile contract/src/allowlist.compact contract/managed/allowlist && pnpm sync-assets",
+    "sync-assets": "rm -rf public/allowlist && mkdir -p public/allowlist && cp -r contract/managed/allowlist/compiler contract/managed/allowlist/keys contract/managed/allowlist/zkir public/allowlist/",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",

@@ -33,9 +33,10 @@ jobs:
           export PATH="$HOME/.compact/bin:$PATH"
           compact update 0.31.1   # pinned: the committed artifacts below are byte-for-byte this compiler's output
           compact compile examples/allowlist-dapp/contract/src/allowlist.compact /tmp/allowlist-ci
-          # the circuits and keys in the repo must be the ones this source produces
-          for f in keys/claimAccess.verifier keys/addMember.verifier zkir/claimAccess.bzkir zkir/addMember.bzkir; do
+          # the circuits and keys in the repo — and the copy the browser DApp serves — must be what this source produces
+          for f in compiler/contract-info.json keys/{addMember,claimAccess}.{prover,verifier} zkir/{addMember,claimAccess}.{zkir,bzkir}; do
             cmp "/tmp/allowlist-ci/$f" "examples/allowlist-dapp/contract/managed/allowlist/$f"
+            cmp "/tmp/allowlist-ci/$f" "examples/allowlist-dapp/public/allowlist/$f"
           done
       - run: pnpm --filter @aetherdust/allowlist-dapp build # the browser DApp must bundle (WASM, shims)
       - run: pnpm test

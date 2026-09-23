@@ -65,7 +65,8 @@ assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "no
 | `test/e2e/allowlist.e2e.test.ts` | 3 tests on a real `undeployed` chain with AetherDust in the loop: **a member holding 0 NIGHT / 0 DUST is admitted with the sponsor paying**, a second admission is refused by the spent nullifier, and a stranger is refused by the circuit before AetherDust is ever asked |
 
 ```bash
-pnpm test                                   # the circuit tests
+pnpm test                                   # the circuit tests (works from here or the repo root)
+# from the repo root, with a local chain up (see the root README → Development):
 AETHERDUST_E2E=1 pnpm vitest run --project e2e test/e2e/allowlist.e2e.test.ts
 ```
 
@@ -78,7 +79,7 @@ AETHERDUST_E2E=1 pnpm vitest run --project e2e test/e2e/allowlist.e2e.test.ts
 - **`claimAccess()`** — prove membership and be admitted, once.
 
 ```bash
-pnpm compile      # compact compile → contract/managed/allowlist (circuits, prover/verifier keys)
+pnpm compile      # compact compile → contract/managed/allowlist (circuits, prover/verifier keys), copied to public/ for the browser
 pnpm test         # 8 tests against the circuit simulator
 ```
 
