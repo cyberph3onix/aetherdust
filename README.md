@@ -29,10 +29,22 @@ member (Lace, payFees:false) ─signed tx─▶ DApp ─POST /v1/sponsorship/req
 Full detail, including the witness-supplied-path attack the contract defends against:
 [`examples/allowlist-dapp/README.md`](examples/allowlist-dapp/README.md).
 
+## Submission facts
+
+| | |
+|---|---|
+| Live demo | _pending — enable GitHub Pages (Settings → Pages → Source: GitHub Actions); the workflow is in `.github/workflows/pages.yml`_ |
+| Preprod contract | _pending deployment (`pnpm deploy-contract setup 3`)_ |
+| Contract source | [`examples/allowlist-dapp/contract/src/allowlist.compact`](examples/allowlist-dapp/contract/src/allowlist.compact) |
+| Circuits + keys | [`contract/managed/allowlist`](examples/allowlist-dapp/contract/managed/allowlist) — CI recompiles and checks these byte-for-byte |
+| Tests | 7 circuit tests + 3 gasless e2e tests on a real chain; 113 across the repo ([evidence](examples/allowlist-dapp/README.md#tested-not-asserted)) |
+| CI | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — compiles the contract, runs every suite, builds the images, walks the Docker quickstart |
+| Demo video | _pending — [script](docs/demo-script.md)_ |
+
 ## Status
 
-- **The dApp**: contract compiles with `compact compile`; 7 tests against the circuit simulator; deployed on
-  Midnight preprod (address below); browser DApp with Lace connect/disconnect and gasless admission.
+- **The dApp**: contract compiles with `compact compile`; 7 tests against the circuit simulator and 3 gasless
+  end-to-end tests on a real chain; browser DApp with Lace connect/disconnect and sponsored admission.
 - **AetherDust**: **v0.1.0**, all six phases complete — a Lace wallet with 0 NIGHT / 0 DUST had a contract call
   sponsored and confirmed on preprod for 0.000001000000001 DUST in block 2657441
   ([changelog](CHANGELOG.md), plan [§0.6](IMPLEMENTATION_PLAN.md)). The flow was first proven in
