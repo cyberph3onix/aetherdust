@@ -122,6 +122,11 @@ transaction with `payFees: false`, and AetherDust's sponsor wallet pays.
 
 - The member secret is kept in this browser's local storage so a demo survives a reload. A real deployment would
   keep it in the wallet or a password manager.
+- The published GitHub Pages build can read the public record from anywhere, but sponsoring a claim needs an
+  AetherDust API and a proof server the page can reach. Pointing it at your own `localhost` works only if you let
+  the browser: Chrome gates local-network requests from an https page behind a permission prompt, and denies them
+  where there is nobody to ask. Allow it from the address bar, or run the DApp locally, or expose both services
+  over https. The page probes on load and says which of these applies.
 - Public proof servers generally do not send CORS headers a browser page can use, so the DApp points at the
   operator's proof server by default (published by `docker-compose.e2e.yml`).
 - Tree depth is 10, so this allowlist holds up to 1024 members. Raising it is a one-word change and a recompile.

@@ -17,11 +17,12 @@
 
   <main>
     <aside class="notice" id="loopback-notice" hidden>
-      <strong>This page cannot reach services on your machine.</strong>
-      It is served over https, and browsers refuse requests from a public site to <code>localhost</code>. Connecting
-      a wallet and reading the public record still work; sponsoring a claim does not. Run the DApp locally
-      (<code>pnpm dev</code> in <code>examples/allowlist-dapp</code>), or point the AetherDust API and proof server
-      below at https endpoints.
+      <strong>This page can't reach the AetherDust API on your machine.</strong>
+      Either it is not running, or your browser refused the request: a site served over https must be given
+      permission before it may talk to <code>localhost</code>. Look for a blocked-permission icon in the address
+      bar, allow local network access, and reload. Reading the public record works either way; sponsoring a claim
+      does not. You can also run the DApp locally (<code>pnpm dev</code>) or point the fields below at https
+      endpoints.
     </aside>
 
     <section class="door" aria-labelledby="door-heading">

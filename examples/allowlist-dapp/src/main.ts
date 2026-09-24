@@ -344,18 +344,31 @@ $('claim').addEventListener('click', async () => {
 });
 
 /**
- * A page served over https cannot fetch `localhost` — Chrome refuses the loopback request outright. That makes the
- * published demo unable to sponsor anything against an operator's own machine, so say it plainly and early.
+ * A page served over https may not reach `localhost` unaided: Chrome gates local-network requests behind a
+ * permission, and refuses them outright where there is nobody to ask — headless, or after an earlier "Block".
+ * It is a permission, not a wall, so probe rather than assume, and speak up only when the request really fails.
+ * A failure is indistinguishable from "the API isn't running", so the notice names both.
  */
-const checkReachability = () => {
+const checkReachability = async () => {
   const local = (u: string) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(u);
-  const blocked = location.protocol === 'https:' && (local(baseUrl()) || local(proofServerField()));
-  $('loopback-notice').hidden = !blocked;
+  const notice = $('loopback-notice');
+  if (location.protocol !== 'https:' || !(local(baseUrl()) || local(proofServerField()))) {
+    notice.hidden = true;
+    return;
+  }
+  try {
+    await fetch(new URL('/healthz', baseUrl()));
+    notice.hidden = true;
+  } catch {
+    notice.hidden = false;
+  }
 };
-for (const id of ['baseUrl', 'proofServer']) $<HTMLInputElement>(id).addEventListener('change', checkReachability);
+for (const id of ['baseUrl', 'proofServer']) {
+  $<HTMLInputElement>(id).addEventListener('change', () => void checkReachability());
+}
 
 // ---------- start ----------
-checkReachability();
+void checkReachability();
 setStamp('unknown');
 renderSecret();
 void refresh();
