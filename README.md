@@ -33,8 +33,8 @@ Full detail, including the witness-supplied-path attack the contract defends aga
 
 | | |
 |---|---|
-| Live demo | _pending — enable GitHub Pages (Settings → Pages → Source: GitHub Actions); the workflow is in `.github/workflows/pages.yml`_ |
-| Preprod contract | _pending deployment (`pnpm deploy-contract setup 3`)_ |
+| Live demo | https://cyberph3onix.github.io/aetherdust/ (GitHub Pages; workflow in `.github/workflows/pages.yml`) |
+| Preprod contract | `bd4b008b86eff24fc2e2d4c4e72cb1834b7c0aa0a6a0be9d805a505d3e24a2a2` — deployed with 3 demo members (blocks 2678517–2678524) |
 | Contract source | [`examples/allowlist-dapp/contract/src/allowlist.compact`](examples/allowlist-dapp/contract/src/allowlist.compact) |
 | Circuits + keys | [`contract/managed/allowlist`](examples/allowlist-dapp/contract/managed/allowlist) — CI recompiles and checks these byte-for-byte |
 | Tests | 8 circuit tests + 3 gasless e2e tests on a real chain; 114 across the repo; the 16 skipped by default are real-chain e2e tests, run nightly in CI ([evidence](examples/allowlist-dapp/README.md#tested-not-asserted)) |

@@ -16,6 +16,14 @@
   </header>
 
   <main>
+    <aside class="notice" id="loopback-notice" hidden>
+      <strong>This page cannot reach services on your machine.</strong>
+      It is served over https, and browsers refuse requests from a public site to <code>localhost</code>. Connecting
+      a wallet and reading the public record still work; sponsoring a claim does not. Run the DApp locally
+      (<code>pnpm dev</code> in <code>examples/allowlist-dapp</code>), or point the AetherDust API and proof server
+      below at https endpoints.
+    </aside>
+
     <section class="door" aria-labelledby="door-heading">
       <svg class="stamp" id="stamp" viewBox="0 0 120 120" role="img" aria-labelledby="stamp-title">
         <title id="stamp-title">Admission stamp</title>

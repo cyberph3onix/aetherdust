@@ -32,7 +32,9 @@ for (const cmd of commands) {
   }
   // `script` frames the capture with its own header/footer lines
   const raw = readFileSync(log, 'latin1').replace(/^Script started.*\n/, '').replace(/\n?Script done.*\n?$/, '');
-  chunks.push(prompt(cmd) + Buffer.from(raw, 'latin1').toString('utf8').replace(/\r?\n/g, '\r\n'));
+  // no trailing newline: the cursor must stay on the last line, or trimming the terminal to its content scrolls the
+  // first line (the prompt) away
+  chunks.push(prompt(cmd) + Buffer.from(raw, 'latin1').toString('utf8').replace(/\r?\n/g, '\r\n').replace(/[\r\n]+$/, ''));
 }
 
 const html = `<!doctype html><html><head>
@@ -64,7 +66,7 @@ await page.evaluate(async ({ chunks, cols }) => {
     const buf = term.buffer.active;
     let last = 0;
     for (let i = 0; i < buf.length; i++) if (buf.getLine(i)?.translateToString(true).trim()) last = i;
-    term.resize(cols, last + 1);
+    term.resize(cols, Math.max(last, buf.cursorY) + 1);
   }
 }, { chunks, cols: COLS });
 await page.waitForTimeout(300);

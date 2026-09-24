@@ -343,7 +343,19 @@ $('claim').addEventListener('click', async () => {
   }
 });
 
+/**
+ * A page served over https cannot fetch `localhost` — Chrome refuses the loopback request outright. That makes the
+ * published demo unable to sponsor anything against an operator's own machine, so say it plainly and early.
+ */
+const checkReachability = () => {
+  const local = (u: string) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(u);
+  const blocked = location.protocol === 'https:' && (local(baseUrl()) || local(proofServerField()));
+  $('loopback-notice').hidden = !blocked;
+};
+for (const id of ['baseUrl', 'proofServer']) $<HTMLInputElement>(id).addEventListener('change', checkReachability);
+
 // ---------- start ----------
+checkReachability();
 setStamp('unknown');
 renderSecret();
 void refresh();
