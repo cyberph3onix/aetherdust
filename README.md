@@ -39,7 +39,7 @@ Full detail, including the witness-supplied-path attack the contract defends aga
 | Circuits + keys | [`contract/managed/allowlist`](examples/allowlist-dapp/contract/managed/allowlist) — CI recompiles and checks these byte-for-byte |
 | Tests | 8 circuit tests + 3 gasless e2e tests on a real chain; 114 across the repo; the 16 skipped by default are real-chain e2e tests, run nightly in CI ([evidence](examples/allowlist-dapp/README.md#tested-not-asserted)) |
 | CI | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — compiles the contract, runs every suite, builds the images, walks the Docker quickstart |
-| Demo video | _pending — [script](docs/demo-script.md)_ |
+| Demo video | https://youtu.be/pfxV75TLTX4 ([script](docs/demo-script.md)) |
 
 ## Status
 

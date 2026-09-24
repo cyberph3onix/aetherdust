@@ -1,2 +1,6 @@
 .deploy-state/
 dist/
+demo-secrets.json
+demo-api-key.json
+add-members.out
+add-members.log

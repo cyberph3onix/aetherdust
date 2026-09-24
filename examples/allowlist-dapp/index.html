@@ -16,15 +16,6 @@
   </header>
 
   <main>
-    <aside class="notice" id="loopback-notice" hidden>
-      <strong>This page can't reach the AetherDust API on your machine.</strong>
-      Either it is not running, or your browser refused the request: a site served over https must be given
-      permission before it may talk to <code>localhost</code>. Look for a blocked-permission icon in the address
-      bar, allow local network access, and reload. Reading the public record works either way; sponsoring a claim
-      does not. You can also run the DApp locally (<code>pnpm dev</code>) or point the fields below at https
-      endpoints.
-    </aside>
-
     <section class="door" aria-labelledby="door-heading">
       <svg class="stamp" id="stamp" viewBox="0 0 120 120" role="img" aria-labelledby="stamp-title">
         <title id="stamp-title">Admission stamp</title>
@@ -127,7 +118,10 @@
         <label>Proof server <input id="proofServer" placeholder="http://localhost:6300" autocomplete="off" /></label>
         <label>Indexer, when no wallet is connected <input id="indexer" placeholder="empty = the network's well-known indexer" autocomplete="off" /></label>
         <label>Import a secret (64 hex) <input id="import-secret" placeholder="paste to replace the secret above" autocomplete="off" /></label>
+        <label>Operator secret, to add members (64 hex, never stored) <input id="owner-secret" type="password" placeholder="the secret behind the contract's owner commitment" autocomplete="off" /></label>
+        <label>Member commitments to add (64 hex, space-separated) <input id="add-commitments" placeholder="one or more commitments" autocomplete="off" /></label>
       </div>
+      <p style="margin-top:var(--space-2)"><button type="button" id="add-members">Add members (operator)</button></p>
       <p class="note" style="margin-top:var(--space-2)">
         The secret lives in this browser's local storage so the demo survives a reload. A real deployment would keep
         it in the wallet or a password manager.

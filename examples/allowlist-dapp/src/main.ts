@@ -126,7 +126,14 @@ const connect = async () => {
   if (found.length === 0) throw new Error('no Midnight wallet on window.midnight — is Lace installed and enabled for this site?');
   const [id, api] = found.find(([k]) => /lace/i.test(k)) ?? found[0]!;
   log(`connecting to ${api.name} (${id}, connector api ${api.apiVersion}) on ${network()}…`);
-  const c = await api.connect(network());
+  // Lace can sit on a connect request forever — e.g. its approval prompt never opened after an unlock — so give up
+  // with instructions instead of leaving the page quiet
+  const c = await Promise.race([
+    api.connect(network()),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(
+      'no answer from Lace after 45 s — click the Lace icon in the toolbar and approve the pending request, or reload this page and connect again')), 45_000)),
+  ]);
+  log('wallet approved the connection, reading its configuration…');
   const status = await c.getConnectionStatus();
   if (status.status !== 'connected') throw new Error('the wallet did not connect');
   if (status.networkId !== network()) throw new Error(`the wallet is on ${status.networkId}, this page is set to ${network()} — change one of them`);
@@ -287,7 +294,7 @@ const providers = async () => {
       r.status === 'confirmed' ? 'ok' : '',
     ),
   });
-  const zk = new FetchZkConfigProvider<'claimAccess'>(assetsUrl);
+  const zk = new FetchZkConfigProvider<'claimAccess' | 'addMember'>(assetsUrl);
   const proofUrl = proofServerField() || walletConfig.proverServerUri || 'http://localhost:6300';
   log(`proving membership on ${proofUrl}`);
   return {
@@ -343,32 +350,45 @@ $('claim').addEventListener('click', async () => {
   }
 });
 
-/**
- * A page served over https may not reach `localhost` unaided: Chrome gates local-network requests behind a
- * permission, and refuses them outright where there is nobody to ask — headless, or after an earlier "Block".
- * It is a permission, not a wall, so probe rather than assume, and speak up only when the request really fails.
- * A failure is indistinguishable from "the API isn't running", so the notice names both.
- */
-const checkReachability = async () => {
-  const local = (u: string) => /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(u);
-  const notice = $('loopback-notice');
-  if (location.protocol !== 'https:' || !(local(baseUrl()) || local(proofServerField()))) {
-    notice.hidden = true;
+// ---------- operator: extend the allowlist ----------
+// addMember is sponsored like claimAccess; the operator proves knowledge of the owner secret instead of signing.
+// The owner secret is only held in the input field for this call — never written to storage.
+$('add-members').addEventListener('click', async () => {
+  const btn = $<HTMLButtonElement>('add-members');
+  const ownerHex = $<HTMLInputElement>('owner-secret').value.trim();
+  const commitments = $<HTMLInputElement>('add-commitments').value.trim().split(/[\s,]+/).filter(Boolean);
+  if (!/^[0-9a-f]{64}$/i.test(ownerHex) || commitments.length === 0 || !commitments.every((c) => /^[0-9a-f]{64}$/i.test(c))) {
+    log('add members: need a 64-hex operator secret and at least one 64-hex commitment', 'bad');
     return;
   }
+  const owner = unhex(ownerHex);
+  btn.disabled = true;
   try {
-    await fetch(new URL('/healthz', baseUrl()));
-    notice.hidden = true;
-  } catch {
-    notice.hidden = false;
+    const state = await publicData().queryContractState(contractAddress());
+    if (!state) throw new Error('contract not found');
+    const ledger = Allowlist.ledger(state.data);
+    if (!same(ledger.owner, commitmentFor(owner))) throw new Error('that is not the operator secret for this contract');
+    const p = await providers();
+    p.privateStateProvider.setContractAddress(contractAddress());
+    await p.privateStateProvider.set('allowlistPrivateState', createPrivateState(owner));
+    const contract = await findDeployedContract(p, {
+      compiledContract: compiled, privateStateId: 'allowlistPrivateState',
+      initialPrivateState: createPrivateState(owner), contractAddress: contractAddress(),
+    });
+    for (const c of commitments) {
+      if (ledger.members.findPathForLeaf(unhex(c))) { log(`already on the list: ${short(c, 12, 6)}`); continue; }
+      const res = await contract.callTx.addMember(unhex(c));
+      log(`added ${short(c, 12, 6)} in block ${res.public.blockHeight}`, 'ok');
+    }
+  } catch (e) {
+    const ad = findAetherDustError(e);
+    log(`add members failed: ${ad ? `${ad.code} — ${ad.message}` : (e as Error).message ?? String(e)}`, 'bad');
+  } finally {
+    btn.disabled = false;
+    await refresh();
   }
-};
-for (const id of ['baseUrl', 'proofServer']) {
-  $<HTMLInputElement>(id).addEventListener('change', () => void checkReachability());
-}
+});
 
-// ---------- start ----------
-void checkReachability();
 setStamp('unknown');
 renderSecret();
 void refresh();

@@ -4,7 +4,7 @@
  *   cd examples/allowlist-dapp && set -a && . ../../deploy/.env && set +a
  *   pnpm deploy-contract setup 3                  # deploy AND admit 3 freshly generated demo members, in one go
  *   pnpm deploy-contract deploy                   # deploy only; prints the contract address
- *   pnpm deploy-contract add <address> <64-hex>   # operator: add one member to an existing allowlist
+ *   pnpm deploy-contract add <address> <64-hex>...   # operator: add members to an existing allowlist
  *   pnpm deploy-contract claim <address> <secret> # claim as that member, paying the fee from this wallet
  *   pnpm deploy-contract secret                   # print a fresh member secret + its commitment
  *
@@ -148,16 +148,22 @@ if (action === 'deploy' || action === 'setup') {
     admissions: Number(led.admissions), nullifiers: [...led.nullifiers].map(hex),
   }, null, 2));
 } else if (action === 'add') {
-  const [, , , addressArg, commitment] = process.argv;
-  if (!addressArg || !/^[0-9a-f]{64}$/i.test(commitment ?? '')) {
-    console.error('usage: pnpm deploy-contract add <contract address> <64-hex member commitment>');
+  // several commitments per run: each run pays for a full wallet sync (~2 h on a public testnet)
+  const [, , , addressArg, ...commitments] = process.argv;
+  if (!addressArg || commitments.length === 0 || !commitments.every((c) => /^[0-9a-f]{64}$/i.test(c))) {
+    console.error('usage: pnpm deploy-contract add <contract address> <64-hex member commitment>...');
     process.exit(2);
   }
   const contract = await findDeployedContract(providers as any, { ...opts, contractAddress: addressArg } as any);
-  const tx = await (contract as any).callTx.addMember(unhex(commitment!));
-  console.log(JSON.stringify({ added: commitment, txId: tx.public.txId, block: tx.public.blockHeight }, null, 2));
+  const added: { commitment: string; txId: string; block: number }[] = [];
+  for (const commitment of commitments) {
+    const tx = await (contract as any).callTx.addMember(unhex(commitment));
+    added.push({ commitment, txId: tx.public.txId, block: tx.public.blockHeight });
+    console.error(`  added ${commitment.slice(0, 12)}… in block ${tx.public.blockHeight}`);
+  }
+  console.log(JSON.stringify({ added }, null, 2));
 } else {
-  console.error('usage: pnpm deploy-contract [setup <count> | deploy | add <address> <commitment> | secret]');
+  console.error('usage: pnpm deploy-contract [setup <count> | deploy | add <address> <commitment>... | secret]');
   process.exit(2);
 }
 process.exit(0);
